@@ -1,0 +1,65 @@
+## Build Results
+[Bb]in/
+[Oo]bj/
+
+# Preserve release binary if shipping standalone executable
+!bin/Release/net8.0-windows/OrionGDWidget.exe
+
+## Visual Studio
+.vs/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.sln.docstates
+*.ide/
+
+## Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+## JetBrains Rider / Resharper
+.idea/
+*.sln.iml
+_ReSharper*/
+
+## Package & NuGet Caches
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.assets.json
+*.nupkg
+*.snupkg
+
+## Operating System Files
+# Windows
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+.directory
+
+## Logs, Crash Dumps & Scratch
+*.log
+*.tmp
+*.bak
+*.dmp
+*.crash
+
+## Temporary Render Previews & Showcase Images
+preview_*.png
+!preview.png
+linkedin_widget_showcase_*.jpg

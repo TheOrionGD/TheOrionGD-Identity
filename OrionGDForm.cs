@@ -66,34 +66,76 @@ namespace OrionGDWidget
         }
     }
 
+    internal class ExperienceCard
+    {
+        public RectangleF Bounds;
+        public string     Company;
+        public string     Role;
+        public string     Detail;
+        public string     Period;
+        public bool       IsHovered;
+
+        public ExperienceCard(string company, string role, string detail, string period)
+        {
+            Company = company;
+            Role    = role;
+            Detail  = detail;
+            Period  = period;
+        }
+    }
+
+    internal class BackgroundParticle
+    {
+        public float X;
+        public float Y;
+        public float Vx;
+        public float Vy;
+        public float Radius;
+        public float BaseAlpha;
+        public float Phase;
+        public float PulseSpeed;
+        public Color Color;
+        public bool  IsHub;
+    }
+
     // ══════════════════════════════════════════════════════════
     //  Main OrionGD Identity Dashboard Widget (32bpp Layered Window)
     // ══════════════════════════════════════════════════════════
     public class OrionGDForm : Form
     {
         // ── Base Canvas Dimensions (96 DPI Reference) ──────────
-        private const float BaseCardW = 500f;
-        private const float BaseCardH = 744f;
-        private const float BaseCardR = 20f;
+        private const float BaseCardW = 530f;
+        private const float BaseCardH = 800f;
+        private const float BaseCardR = 22f;
         private const float BasePad   = 22f;
 
-        // ── Curated Futuristic Palette ─────────────────────────
-        private static readonly Color C_BG_TOP        = Color.FromArgb(255, 6,   9,   19);
-        private static readonly Color C_BG_MID        = Color.FromArgb(255, 10,  15,  30);
-        private static readonly Color C_BG_BOTTOM     = Color.FromArgb(255, 5,   8,   17);
-        private static readonly Color C_BORDER        = Color.FromArgb(255, 26,  36,  54);
-        private static readonly Color C_CYAN          = Color.FromArgb(255, 56,  189, 248);
-        private static readonly Color C_CYAN_BRIGHT   = Color.FromArgb(255, 186, 230, 253);
-        private static readonly Color C_EMERALD       = Color.FromArgb(255, 16,  185, 129);
-        private static readonly Color C_PURPLE        = Color.FromArgb(255, 168, 85,  247);
-        private static readonly Color C_AMBER         = Color.FromArgb(255, 245, 158, 11);
-        private static readonly Color C_CRIMSON       = Color.FromArgb(255, 239, 68,  68);
-        private static readonly Color C_INDIGO        = Color.FromArgb(255, 99,  102, 241);
-        private static readonly Color C_TEXT_PRIMARY  = Color.FromArgb(255, 248, 250, 252);
-        private static readonly Color C_TEXT_SECOND   = Color.FromArgb(255, 148, 163, 184);
-        private static readonly Color C_TEXT_MUTED    = Color.FromArgb(255, 100, 116, 139);
-        private static readonly Color C_TILE_BG       = Color.FromArgb(255, 12,  18,  34);
-        private static readonly Color C_TILE_BORDER   = Color.FromArgb(255, 28,  39,  62);
+        // ── Curated Futuristic Industrial Palette (Red + Charcoal + Black)
+        private static readonly Color C_ENV_BLACK      = Color.FromArgb(255, 8,   9,   11);  // #08090B
+        private static readonly Color C_BG_MAIN        = Color.FromArgb(255, 13,  15,  17);  // #0D0F11
+        private static readonly Color C_CHARCOAL_MAIN  = Color.FromArgb(255, 17,  19,  21);  // #111315
+        private static readonly Color C_CHARCOAL_SEC   = Color.FromArgb(255, 24,  26,  29);  // #181A1D
+        private static readonly Color C_SURFACE_ELEV   = Color.FromArgb(255, 30,  33,  37);  // #1E2125
+        private static readonly Color C_SURFACE_HL     = Color.FromArgb(255, 36,  39,  43);  // #24272B
+
+        // ── Red Energy Accent System (10% Ratio)
+        private static readonly Color C_RED_PRIMARY    = Color.FromArgb(255, 229, 57,  53);  // #E53935
+        private static readonly Color C_RED_SIGNAL     = Color.FromArgb(255, 255, 59,  48);  // #FF3B30
+        private static readonly Color C_RED_CRIMSON    = Color.FromArgb(255, 139, 30,  35);  // #8B1E23
+        private static readonly Color C_RED_DARK       = Color.FromArgb(255, 53,  23,  26);  // #35171A
+        private static readonly Color C_RED_BORDER     = Color.FromArgb(255, 111, 36,  40);  // #6F2428
+
+        // ── Typography System
+        private static readonly Color C_TEXT_PRIMARY   = Color.FromArgb(255, 242, 242, 242); // #F2F2F2
+        private static readonly Color C_TEXT_SECOND    = Color.FromArgb(255, 167, 170, 174); // #A7AAAE
+        private static readonly Color C_TEXT_CHIP      = Color.FromArgb(255, 213, 215, 218); // #D5D7DA
+        private static readonly Color C_TEXT_MUTED     = Color.FromArgb(255, 104, 109, 115); // #686D73
+        private static readonly Color C_TEXT_DISABLED  = Color.FromArgb(255, 69,  72,  76);  // #45484C
+
+        // ── Industrial Borders
+        private static readonly Color C_BORDER_NORMAL  = Color.FromArgb(255, 48,  51,  56);  // #303338
+        private static readonly Color C_BORDER_SUBTLE  = Color.FromArgb(255, 37,  40,  44);  // #25282C
+        private static readonly Color C_BORDER_ACTIVE  = Color.FromArgb(255, 111, 36,  40);  // #6F2428
+        private static readonly Color C_BORDER_HL      = Color.FromArgb(255, 229, 57,  53);  // #E53935
 
         // ── Scaling & Bounds ───────────────────────────────────
         private float      _dpiScale = 1.0f;
@@ -111,24 +153,27 @@ namespace OrionGDWidget
         private Point _winStart;
 
         // ── Interactive UI Components ──────────────────────────
-        private readonly List<FocusCard>     _focusCards     = new();
-        private readonly List<SkillPill>     _skillPills     = new();
-        private readonly List<ConnectButton> _connectButtons = new();
-        private readonly ToolTip             _tooltip        = new ToolTip();
-        private string                       _activeTooltip  = string.Empty;
+        private readonly List<FocusCard>          _focusCards      = new();
+        private readonly List<SkillPill>          _skillPills      = new();
+        private readonly List<ExperienceCard>     _experienceCards = new();
+        private readonly List<ConnectButton>      _connectButtons  = new();
+        private readonly List<BackgroundParticle> _particles        = new();
+        private readonly Random                   _rng             = new Random(1337);
+        private readonly ToolTip                  _tooltip         = new ToolTip();
+        private string                        _activeTooltip   = string.Empty;
 
         // Hitboxes
         private RectangleF _btnCloseBounds;
         private RectangleF _btnMinBounds;
         private RectangleF _availablePillBounds;
         private RectangleF _certCardBounds;
-        private RectangleF _patentCardBounds;
+        private RectangleF _projectsCardBounds;
 
         private bool _btnCloseHovered;
         private bool _btnMinHovered;
         private bool _availablePillHovered;
         private bool _certCardHovered;
-        private bool _patentCardHovered;
+        private bool _projectsCardHovered;
 
         // ── System Tray & Context Menu ─────────────────────────
         private NotifyIcon?       _trayIcon;
@@ -149,11 +194,14 @@ namespace OrionGDWidget
         private Font? _fontFocusTitle;
         private Font? _fontFocusSub;
         private Font? _fontSkillPill;
+        private Font? _fontExpCompany;
+        private Font? _fontExpRole;
+        private Font? _fontExpDetail;
+        private Font? _fontExpPeriod;
         private Font? _fontCertHeader;
         private Font? _fontCertBody;
-        private Font? _fontPatentTitle;
-        private Font? _fontPatentApp;
-        private Font? _fontPatentDesc;
+        private Font? _fontProjectsHeader;
+        private Font? _fontProjectsBody;
         private Font? _fontConnectHandle;
         private Font? _fontConnectHandleCompact;
         private Font? _fontConnectPlatform;
@@ -180,6 +228,7 @@ namespace OrionGDWidget
             InitForm();
             InitFonts();
             InitElements();
+            InitParticles();
             BuildTrayAndMenu();
             StartAnimation();
         }
@@ -205,7 +254,7 @@ namespace OrionGDWidget
         // ──────────────────────────────────────────────────────
         private void InitForm()
         {
-            Text            = "OrionGD Identity Dashboard";
+            Text            = "TheOrionGD Identity Dashboard";
             FormBorderStyle = FormBorderStyle.None;
             StartPosition   = FormStartPosition.Manual;
             TopMost         = true;
@@ -254,11 +303,14 @@ namespace OrionGDWidget
             _fontFocusTitle?.Dispose();
             _fontFocusSub?.Dispose();
             _fontSkillPill?.Dispose();
+            _fontExpCompany?.Dispose();
+            _fontExpRole?.Dispose();
+            _fontExpDetail?.Dispose();
+            _fontExpPeriod?.Dispose();
             _fontCertHeader?.Dispose();
             _fontCertBody?.Dispose();
-            _fontPatentTitle?.Dispose();
-            _fontPatentApp?.Dispose();
-            _fontPatentDesc?.Dispose();
+            _fontProjectsHeader?.Dispose();
+            _fontProjectsBody?.Dispose();
             _fontConnectHandle?.Dispose();
             _fontConnectHandleCompact?.Dispose();
             _fontConnectPlatform?.Dispose();
@@ -266,66 +318,74 @@ namespace OrionGDWidget
             _fontFooterTag?.Dispose();
             _fontMonogram?.Dispose();
 
-            _fontTopHeader            = new Font("Segoe UI", S(9.0f),  FontStyle.Bold,    GraphicsUnit.Pixel);
-            _fontTopSub               = new Font("Segoe UI", S(7.0f),  FontStyle.Bold,    GraphicsUnit.Pixel);
-            _fontHeroTag              = new Font("Segoe UI", S(8.5f),  FontStyle.Bold,    GraphicsUnit.Pixel);
-            _fontHeroSub              = new Font("Segoe UI", S(6.8f),  FontStyle.Bold,    GraphicsUnit.Pixel);
-            _fontAvailStatus          = new Font("Segoe UI", S(7.8f),  FontStyle.Bold,    GraphicsUnit.Pixel);
-            _fontAvailSub             = new Font("Segoe UI", S(6.8f),  FontStyle.Bold,    GraphicsUnit.Pixel);
-            _fontBrand                = new Font("Segoe UI", S(20.5f), FontStyle.Bold,    GraphicsUnit.Pixel);
-            _fontName                 = new Font("Segoe UI", S(15.5f), FontStyle.Bold,    GraphicsUnit.Pixel);
-            _fontRolePill             = new Font("Segoe UI", S(8.5f),  FontStyle.Bold,    GraphicsUnit.Pixel);
-            _fontBio                  = new Font("Segoe UI", S(9.2f),  FontStyle.Regular, GraphicsUnit.Pixel);
-            _fontSecHeader            = new Font("Segoe UI", S(8.2f),  FontStyle.Bold,    GraphicsUnit.Pixel);
-            _fontFocusTitle           = new Font("Segoe UI", S(9.2f),  FontStyle.Bold,    GraphicsUnit.Pixel);
-            _fontFocusSub             = new Font("Segoe UI", S(7.2f),  FontStyle.Regular, GraphicsUnit.Pixel);
-            _fontSkillPill            = new Font("Segoe UI", S(8.0f),  FontStyle.Bold,    GraphicsUnit.Pixel);
-            _fontCertHeader           = new Font("Segoe UI", S(8.0f),  FontStyle.Bold,    GraphicsUnit.Pixel);
-            _fontCertBody             = new Font("Segoe UI", S(6.8f),  FontStyle.Regular, GraphicsUnit.Pixel);
-            _fontPatentTitle          = new Font("Segoe UI", S(9.5f),  FontStyle.Bold,    GraphicsUnit.Pixel);
-            _fontPatentApp            = new Font("Segoe UI", S(7.5f),  FontStyle.Bold,    GraphicsUnit.Pixel);
-            _fontPatentDesc           = new Font("Segoe UI", S(7.2f),  FontStyle.Regular, GraphicsUnit.Pixel);
-            _fontConnectHandle        = new Font("Segoe UI", S(7.8f),  FontStyle.Bold,    GraphicsUnit.Pixel);
-            _fontConnectHandleCompact = new Font("Segoe UI", S(5.8f),  FontStyle.Bold,    GraphicsUnit.Pixel);
-            _fontConnectPlatform      = new Font("Segoe UI", S(6.8f),  FontStyle.Regular, GraphicsUnit.Pixel);
-            _fontFooterQuote          = new Font("Segoe UI", S(8.2f),  FontStyle.Regular, GraphicsUnit.Pixel);
-            _fontFooterTag            = new Font("Segoe UI", S(8.0f),  FontStyle.Bold,    GraphicsUnit.Pixel);
-            _fontMonogram             = new Font("Segoe UI", S(18.0f), FontStyle.Bold,    GraphicsUnit.Pixel);
+            _fontTopHeader            = new Font("Segoe UI", S(11.2f), FontStyle.Bold,    GraphicsUnit.Pixel);
+            _fontTopSub               = new Font("Segoe UI", S(8.6f),  FontStyle.Bold,    GraphicsUnit.Pixel);
+            _fontHeroTag              = new Font("Segoe UI", S(10.8f), FontStyle.Bold,    GraphicsUnit.Pixel);
+            _fontHeroSub              = new Font("Segoe UI", S(8.0f),  FontStyle.Bold,    GraphicsUnit.Pixel);
+            _fontAvailStatus          = new Font("Segoe UI", S(9.2f),  FontStyle.Bold,    GraphicsUnit.Pixel);
+            _fontAvailSub             = new Font("Segoe UI", S(8.0f),  FontStyle.Bold,    GraphicsUnit.Pixel);
+            _fontBrand                = new Font("Segoe UI", S(23.5f), FontStyle.Bold,    GraphicsUnit.Pixel);
+            _fontName                 = new Font("Segoe UI", S(17.5f), FontStyle.Bold,    GraphicsUnit.Pixel);
+            _fontRolePill             = new Font("Segoe UI", S(10.0f), FontStyle.Bold,    GraphicsUnit.Pixel);
+            _fontBio                  = new Font("Segoe UI", S(10.6f), FontStyle.Regular, GraphicsUnit.Pixel);
+            _fontSecHeader            = new Font("Segoe UI", S(10.0f), FontStyle.Bold,    GraphicsUnit.Pixel);
+            _fontFocusTitle           = new Font("Segoe UI", S(10.8f), FontStyle.Bold,    GraphicsUnit.Pixel);
+            _fontFocusSub             = new Font("Segoe UI", S(8.8f),  FontStyle.Regular, GraphicsUnit.Pixel);
+            _fontSkillPill            = new Font("Segoe UI", S(9.5f),  FontStyle.Bold,    GraphicsUnit.Pixel);
+            _fontExpCompany           = new Font("Segoe UI", S(9.8f),  FontStyle.Bold,    GraphicsUnit.Pixel);
+            _fontExpRole              = new Font("Segoe UI", S(8.4f),  FontStyle.Bold,    GraphicsUnit.Pixel);
+            _fontExpDetail            = new Font("Segoe UI", S(7.8f),  FontStyle.Regular, GraphicsUnit.Pixel);
+            _fontExpPeriod            = new Font("Segoe UI", S(7.4f),  FontStyle.Bold,    GraphicsUnit.Pixel);
+            _fontCertHeader           = new Font("Segoe UI", S(10.0f), FontStyle.Bold,    GraphicsUnit.Pixel);
+            _fontCertBody             = new Font("Segoe UI", S(8.4f),  FontStyle.Regular, GraphicsUnit.Pixel);
+            _fontProjectsHeader       = new Font("Segoe UI", S(10.0f), FontStyle.Bold,    GraphicsUnit.Pixel);
+            _fontProjectsBody         = new Font("Segoe UI", S(8.4f),  FontStyle.Regular, GraphicsUnit.Pixel);
+            _fontConnectHandle        = new Font("Segoe UI", S(9.5f),  FontStyle.Bold,    GraphicsUnit.Pixel);
+            _fontConnectHandleCompact = new Font("Segoe UI", S(7.6f),  FontStyle.Bold,    GraphicsUnit.Pixel);
+            _fontConnectPlatform      = new Font("Segoe UI", S(8.0f),  FontStyle.Regular, GraphicsUnit.Pixel);
+            _fontFooterQuote          = new Font("Segoe UI", S(9.6f),  FontStyle.Regular, GraphicsUnit.Pixel);
+            _fontFooterTag            = new Font("Segoe UI", S(9.4f),  FontStyle.Bold,    GraphicsUnit.Pixel);
+            _fontMonogram             = new Font("Segoe UI", S(16.5f), FontStyle.Bold,    GraphicsUnit.Pixel);
         }
 
         // ──────────────────────────────────────────────────────
         private void InitElements()
         {
-            // 6 Focus Areas (3x2 Grid)
+            // 6 Focus Areas (3x2 Grid) - Unified Red Energy Accent
             _focusCards.Clear();
-            _focusCards.Add(new FocusCard("fullstack", "Full-Stack",      "Web • MERN • APIs",          C_EMERALD));
-            _focusCards.Add(new FocusCard("ai-int",    "AI Integration",  "LLMs • RAG • Automation",    C_PURPLE));
-            _focusCards.Add(new FocusCard("ux-user",   "User-Centric UX", "Design • Accessibility",     C_AMBER));
-            _focusCards.Add(new FocusCard("ai-llm",    "AI & LLMs",       "Gemini • Groq • HuggingFace", C_CYAN));
-            _focusCards.Add(new FocusCard("security",  "Security & Cloud","Zero Trust • Azure",         C_CRIMSON));
-            _focusCards.Add(new FocusCard("uiux",      "UI / UX Design",  "Modern • Responsive",        Color.FromArgb(255, 192, 132, 252)));
+            _focusCards.Add(new FocusCard("fullstack", "Java Full-Stack", "Spring Boot • React • JDBC",  C_RED_SIGNAL));
+            _focusCards.Add(new FocusCard("ai-int",    "Multi-Agent AI",  "LLMs • RAG • Autonomous",     C_RED_SIGNAL));
+            _focusCards.Add(new FocusCard("vision",    "Edge-AI & Vision","FastAPI • OpenCV • ONNX",     C_RED_SIGNAL));
+            _focusCards.Add(new FocusCard("backend",   "Backend & APIs",  "REST APIs • Docker • Micro",  C_RED_SIGNAL));
+            _focusCards.Add(new FocusCard("security",  "Security & Cloud","Zero Trust • JWT • Auth",     C_RED_SIGNAL));
+            _focusCards.Add(new FocusCard("mobile",    "Web & Mobile",    "Next.js • React Native • UI", C_RED_SIGNAL));
 
-            // 10 Skills & Technologies Pills
+            // 10 Skills & Technologies Pills (2 rows of 5)
             _skillPills.Clear();
-            _skillPills.Add(new SkillPill("c",             "C"));
-            _skillPills.Add(new SkillPill("cpp",           "C++"));
             _skillPills.Add(new SkillPill("java",          "Java"));
             _skillPills.Add(new SkillPill("python",        "Python"));
-            _skillPills.Add(new SkillPill("sql",           "SQL"));
+            _skillPills.Add(new SkillPill("spring",        "Spring Boot"));
             _skillPills.Add(new SkillPill("react",         "React"));
-            _skillPills.Add(new SkillPill("mern",          "MERN"));
-            _skillPills.Add(new SkillPill("uiux",          "UI/UX"));
-            _skillPills.Add(new SkillPill("3d",            "3D/XR"));
+            _skillPills.Add(new SkillPill("cpp",           "C / C++"));
+            _skillPills.Add(new SkillPill("node",          "Node.js"));
+            _skillPills.Add(new SkillPill("fastapi",       "FastAPI"));
+            _skillPills.Add(new SkillPill("sql",           "SQL"));
+            _skillPills.Add(new SkillPill("mongo",         "MongoDB"));
             _skillPills.Add(new SkillPill("cybersecurity", "Cybersecurity"));
 
-            // 6 Connect Platform Buttons
+            // 3 Industry Internship Experiences from Resume
+            _experienceCards.Clear();
+            _experienceCards.Add(new ExperienceCard("VDART Academy",    "Full Stack Intern (OJT)", "15+ APIs • OJT Delivery • +35% Spd", "Jan 2026"));
+            _experienceCards.Add(new ExperienceCard("Prodigy InfoTech", "Web Development Intern", "Weather App • -30% Load • Vanilla JS", "Aug–Sep '24"));
+            _experienceCards.Add(new ExperienceCard("Adaovi",           "CyberSecurity Intern",    "Pentest • Auth Hardening • Patching",  "Jun–Jul '24"));
+
+            // 5 Connect Platform Buttons (Play Console removed, larger 95px touchpoints)
             _connectButtons.Clear();
-            _connectButtons.Add(new ConnectButton("github",      "TheOrionGD",              "GitHub",       "https://github.com/OrionGD",                             "GitHub / OrionGD"));
-            _connectButtons.Add(new ConnectButton("linkedin",    "godfrey-1823lw",          "LinkedIn",     "https://www.linkedin.com/in/godfrey-1823lw/",            "LinkedIn / Godfrey T. R"));
-            _connectButtons.Add(new ConnectButton("hackerrank",  "OrionGD07",               "HackerRank",   "https://www.hackerrank.com/OrionGD07",                   "HackerRank / OrionGD07"));
-            _connectButtons.Add(new ConnectButton("portfolio",   "the-orion-gd.vercel.app", "Portfolio",    "https://the-orion-gd.vercel.app/",                       "Official Portfolio Website"));
-            _connectButtons.Add(new ConnectButton("play",        "TheOrionGD",              "Play Console", "https://play.google.com/store/apps/developer?id=TheOrionGD", "Google Play Developer Profile"));
-            _connectButtons.Add(new ConnectButton("youtube",     "theoriongd",              "YouTube",      "https://www.youtube.com/@theoriongd",                    "YouTube Channel / @theoriongd"));
+            _connectButtons.Add(new ConnectButton("github",      "TheOrionGD",              "GitHub",       "https://github.com/TheOrionGD",              "GitHub / TheOrionGD"));
+            _connectButtons.Add(new ConnectButton("linkedin",    "theoriongd",              "LinkedIn",     "https://www.linkedin.com/in/theoriongd/",    "LinkedIn / theoriongd"));
+            _connectButtons.Add(new ConnectButton("portfolio",   "the-orion-gd.vercel.app", "Portfolio",    "https://the-orion-gd.vercel.app/",          "Official Portfolio Website"));
+            _connectButtons.Add(new ConnectButton("hackerrank",  "OrionGD07",               "HackerRank",   "https://www.hackerrank.com/OrionGD07",      "HackerRank / OrionGD07"));
+            _connectButtons.Add(new ConnectButton("youtube",     "theoriongd",              "YouTube",      "https://www.youtube.com/@theoriongd",       "YouTube / @theoriongd"));
         }
 
         // ──────────────────────────────────────────────────────
@@ -335,24 +395,23 @@ namespace OrionGDWidget
             _contextMenu.Items.Add("Show / Hide Dashboard", null, (s, e) => ToggleVisibility());
             _contextMenu.Items.Add(new ToolStripSeparator());
             _contextMenu.Items.Add("Open Portfolio Website", null, (s, e) => OpenUrl("https://the-orion-gd.vercel.app/"));
-            _contextMenu.Items.Add("Open GitHub Profile",    null, (s, e) => OpenUrl("https://github.com/OrionGD"));
-            _contextMenu.Items.Add("Open LinkedIn Profile",  null, (s, e) => OpenUrl("https://www.linkedin.com/in/godfrey-1823lw/"));
+            _contextMenu.Items.Add("Open GitHub Profile",    null, (s, e) => OpenUrl("https://github.com/TheOrionGD"));
+            _contextMenu.Items.Add("Open LinkedIn Profile",  null, (s, e) => OpenUrl("https://www.linkedin.com/in/theoriongd/"));
             _contextMenu.Items.Add("Open HackerRank Profile",null, (s, e) => OpenUrl("https://www.hackerrank.com/OrionGD07"));
-            _contextMenu.Items.Add("Open Google Play Store", null, (s, e) => OpenUrl("https://play.google.com/store/apps/developer?id=TheOrionGD"));
             _contextMenu.Items.Add("Open YouTube Channel",   null, (s, e) => OpenUrl("https://www.youtube.com/@theoriongd"));
             _contextMenu.Items.Add(new ToolStripSeparator());
-            _contextMenu.Items.Add("About OrionGD Identity", null, (s, e) => ShowAboutDialog());
+            _contextMenu.Items.Add("About TheOrionGD Identity", null, (s, e) => ShowAboutDialog());
             _contextMenu.Items.Add(new ToolStripSeparator());
             _contextMenu.Items.Add("Exit",                   null, (s, e) => Close());
 
-            _contextMenu.BackColor       = Color.FromArgb(255, 12, 18, 34);
-            _contextMenu.ForeColor       = Color.FromArgb(255, 241, 245, 249);
+            _contextMenu.BackColor       = C_CHARCOAL_MAIN;
+            _contextMenu.ForeColor       = C_TEXT_PRIMARY;
             _contextMenu.ShowImageMargin = false;
 
             Icon trayIcon = CreateBrandIcon();
             _trayIcon = new NotifyIcon
             {
-                Text             = "OrionGD Identity Dashboard",
+                Text             = "TheOrionGD Identity Dashboard",
                 Icon             = trayIcon,
                 Visible          = true,
                 ContextMenuStrip = _contextMenu
@@ -369,20 +428,20 @@ namespace OrionGDWidget
                 g.SmoothingMode = SmoothingMode.AntiAlias;
                 g.Clear(Color.Transparent);
 
-                using var bgBrush = new SolidBrush(Color.FromArgb(255, 10, 14, 26));
+                using var bgBrush = new SolidBrush(C_CHARCOAL_MAIN);
                 g.FillEllipse(bgBrush, 1, 1, size - 2, size - 2);
 
-                using var ringPen = new Pen(C_CYAN, 1.5f);
+                using var ringPen = new Pen(C_RED_SIGNAL, 1.5f);
                 g.DrawEllipse(ringPen, 2, 2, size - 4, size - 4);
 
-                using var font = new Font("Segoe UI", 9f, FontStyle.Bold);
-                using var textBrush = new SolidBrush(Color.White);
+                using var font = new Font("Segoe UI", 7.5f, FontStyle.Bold);
+                using var textBrush = new SolidBrush(C_TEXT_PRIMARY);
                 var sf = new StringFormat
                 {
                     Alignment     = StringAlignment.Center,
                     LineAlignment = StringAlignment.Center
                 };
-                g.DrawString("GD", font, textBrush, new RectangleF(0, 0, size, size), sf);
+                g.DrawString("OGD", font, textBrush, new RectangleF(0, 0, size, size), sf);
             }
             return Icon.FromHandle(bmp.GetHicon());
         }
@@ -417,6 +476,8 @@ namespace OrionGDWidget
             _glowPulse      += 0.025f;
             _orbitRingAngle += 0.012f;
 
+            UpdateParticles();
+
             RenderLayeredWindow();
         }
 
@@ -431,7 +492,7 @@ namespace OrionGDWidget
                     _btnMinBounds.Contains(e.Location) ||
                     _availablePillBounds.Contains(e.Location) ||
                     _certCardBounds.Contains(e.Location) ||
-                    _patentCardBounds.Contains(e.Location))
+                    _projectsCardBounds.Contains(e.Location))
                     return;
 
                 foreach (var fc in _focusCards)
@@ -439,6 +500,9 @@ namespace OrionGDWidget
 
                 foreach (var p in _skillPills)
                     if (p.Bounds.Contains(e.Location)) return;
+
+                foreach (var exp in _experienceCards)
+                    if (exp.Bounds.Contains(e.Location)) return;
 
                 foreach (var b in _connectButtons)
                     if (b.Bounds.Contains(e.Location)) return;
@@ -485,9 +549,9 @@ namespace OrionGDWidget
             if (newCert != _certCardHovered) { _certCardHovered = newCert; repaint = true; }
             if (newCert) { anyHover = true; hoveredTooltip = "Professional Certifications & Accreditations"; }
 
-            bool newPatent = _patentCardBounds.Contains(pt);
-            if (newPatent != _patentCardHovered) { _patentCardHovered = newPatent; repaint = true; }
-            if (newPatent) { anyHover = true; hoveredTooltip = "Indian Patent App. No. 202441033032: IR-based Android TV control"; }
+            bool newProjects = _projectsCardBounds.Contains(pt);
+            if (newProjects != _projectsCardHovered) { _projectsCardHovered = newProjects; repaint = true; }
+            if (newProjects) { anyHover = true; hoveredTooltip = "Featured Projects: Connify App & FaceShield-Authentication"; }
 
             foreach (var fc in _focusCards)
             {
@@ -510,6 +574,18 @@ namespace OrionGDWidget
                 {
                     anyHover = true;
                     hoveredTooltip = $"Skill / Technology: {p.Name}";
+                }
+            }
+
+            foreach (var exp in _experienceCards)
+            {
+                bool wasH = exp.IsHovered;
+                exp.IsHovered = exp.Bounds.Contains(pt);
+                if (exp.IsHovered != wasH) repaint = true;
+                if (exp.IsHovered)
+                {
+                    anyHover = true;
+                    hoveredTooltip = $"{exp.Company} ({exp.Period}) — {exp.Role}: {exp.Detail}";
                 }
             }
 
@@ -563,7 +639,7 @@ namespace OrionGDWidget
                 return;
             }
 
-            if (_availablePillBounds.Contains(pt) || _certCardBounds.Contains(pt) || _patentCardBounds.Contains(pt))
+            if (_availablePillBounds.Contains(pt) || _certCardBounds.Contains(pt) || _projectsCardBounds.Contains(pt))
             {
                 OpenUrl("https://the-orion-gd.vercel.app/");
                 return;
@@ -572,6 +648,15 @@ namespace OrionGDWidget
             foreach (var fc in _focusCards)
             {
                 if (fc.Bounds.Contains(pt))
+                {
+                    OpenUrl("https://the-orion-gd.vercel.app/");
+                    return;
+                }
+            }
+
+            foreach (var exp in _experienceCards)
+            {
+                if (exp.Bounds.Contains(pt))
                 {
                     OpenUrl("https://the-orion-gd.vercel.app/");
                     return;
@@ -630,6 +715,7 @@ namespace OrionGDWidget
                 S(BaseCardH));
 
             RecreateDib(Width, Height);
+            InitParticles();
             RenderLayeredWindow();
         }
 
@@ -645,7 +731,10 @@ namespace OrionGDWidget
         private void ShowAboutDialog()
         {
             using var dlg = new AboutDialog();
+            dlg.TopMost = true;
+            dlg.StartPosition = FormStartPosition.CenterScreen;
             dlg.ShowDialog(this);
+            BringToFront();
         }
 
         // ══════════════════════════════════════════════════════
@@ -776,34 +865,38 @@ namespace OrionGDWidget
             // 2. Glassmorphic card body with vibrant cyan-emerald gradient laser rim
             DrawCardSurface(g, card, r);
 
-            // 3. Top Header Bar: "ORION IDENTITY / BUILD • SOLVE • IMPACT" & Window buttons
+            // 3. Top Header Bar: "THEORION IDENTITY / BUILD — INNOVATE — IMPACT" & Window buttons
             DrawTopHeaderBar(g, card);
 
             // 4. Hero Section: Left Winged Logo + Center Holographic Crest + Right "AVAILABLE" pill
-            float heroCY = card.Y + S(86f);
+            float heroCY = card.Y + S(88f);
             DrawHeroSection(g, card, heroCY);
 
-            // 5. Identity Titles: ORIONGD, Godfrey T. R, [SOFTWARE ENGINEER], Bio
-            float idY = card.Y + S(138f);
+            // 5. Identity Titles: THEORIONGD, Godfrey T. R, [JAVA FULL STACK & SOFTWARE ENGINEER], Bio
+            float idY = card.Y + S(142f);
             idY = DrawIdentityTitles(g, card, idY);
 
             // 6. Focus Areas 3x2 Grid
-            float focusY = idY + S(10f);
+            float focusY = idY + S(14f);
             focusY = DrawFocusGrid(g, card, focusY);
 
-            // 7. Skills & Technologies Section
-            float skillsY = focusY + S(12f);
+            // 7. Skills & Technologies Section (2x5 Grid)
+            float skillsY = focusY + S(14f);
             skillsY = DrawSkillsSection(g, card, skillsY);
 
-            // 8. Certifications & Indian Patent Row
-            float certY = skillsY + S(12f);
-            certY = DrawCertAndPatentRow(g, card, certY);
+            // 8. Internship Experience (3-Card Row from Resume)
+            float expY = skillsY + S(14f);
+            expY = DrawExperienceSection(g, card, expY);
 
-            // 9. Connect With Me 6 Platform Buttons
-            float connectY = certY + S(12f);
+            // 9. Certifications & Featured Projects Row
+            float certY = expY + S(14f);
+            certY = DrawCertAndProjectsRow(g, card, certY);
+
+            // 10. Connect With Me 5 Platform Buttons
+            float connectY = certY + S(14f);
             connectY = DrawConnectSection(g, card, connectY);
 
-            // 10. Footer Bar: "> Always learning. Always building." and "/// ORIONGD × CSE 23 A"
+            // 11. Footer Bar: "> Always learning. Always building." and "/// THEORIONGD × OGD"
             DrawFooterBar(g, card, card.Bottom - S(26f));
         }
 
@@ -812,6 +905,7 @@ namespace OrionGDWidget
         // ──────────────────────────────────────────────────────
         private void DrawAmbientGlow(Graphics g, RectangleF card, float r)
         {
+            // Subtle 0 20px 80px rgba(0,0,0,0.45) shadow
             for (int i = 4; i >= 1; i--)
             {
                 float spread = S(i * 3.5f);
@@ -827,10 +921,11 @@ namespace OrionGDWidget
                 g.FillPath(sb, sp);
             }
 
-            float glowBright = (float)(0.40 + 0.25 * Math.Sin(_glowPulse));
-            int ga = Math.Clamp((int)(glowBright * 55), 0, 255);
-            using var glowBrush = new SolidBrush(Color.FromArgb(ga, 56, 189, 248));
-            float glowSpread = S(3.5f);
+            // Subtle red ambient glow: 0 0 40px rgba(255, 59, 48, 0.08)
+            float glowBright = (float)(0.06 + 0.02 * Math.Sin(_glowPulse));
+            int ga = Math.Clamp((int)(glowBright * 255), 0, 255);
+            using var glowBrush = new SolidBrush(Color.FromArgb(ga, C_RED_SIGNAL));
+            float glowSpread = S(4.0f);
             var glowRect = new RectangleF(
                 card.X - glowSpread,
                 card.Y - glowSpread,
@@ -841,41 +936,40 @@ namespace OrionGDWidget
         }
 
         // ──────────────────────────────────────────────────────
-        // 2. Glassmorphic Card Surface & Dual Gradient Border
+        // 2. Glassmorphic Card Surface & Industrial Red Border
         // ──────────────────────────────────────────────────────
         private void DrawCardSurface(Graphics g, RectangleF card, float r)
         {
             using var cardPath = RoundedRect(card, r);
 
-            // Deep cosmic background gradient
+            // Main Charcoal / Black Industrial background
             using var bgBrush = new LinearGradientBrush(
                 new PointF(card.X, card.Y),
                 new PointF(card.Right, card.Bottom),
-                C_BG_TOP, C_BG_BOTTOM);
-
-            var cb = new ColorBlend(3)
-            {
-                Positions = new[] { 0.0f, 0.50f, 1.0f },
-                Colors    = new[] { C_BG_TOP, C_BG_MID, C_BG_BOTTOM }
-            };
-            bgBrush.InterpolationColors = cb;
+                C_CHARCOAL_MAIN, C_BG_MAIN);
             g.FillPath(bgBrush, cardPath);
 
-            // Specular top glass curvature sheen
-            var sheenRect = new RectangleF(card.X, card.Y, card.Width, S(48f));
+            // Dynamic Particle Constellation Field (Clipped within card bounds)
+            var prevClip = g.Clip;
+            g.SetClip(cardPath, CombineMode.Intersect);
+            DrawParticleField(g, card);
+            g.Clip = prevClip;
+
+            // Very subtle specular top sheen
+            var sheenRect = new RectangleF(card.X, card.Y, card.Width, S(36f));
             using var sheenPath = RoundedRect(sheenRect, r);
             using var sheenBrush = new LinearGradientBrush(
                 new PointF(card.X, card.Y),
-                new PointF(card.X, card.Y + S(48f)),
-                Color.FromArgb(24, 255, 255, 255),
+                new PointF(card.X, card.Y + S(36f)),
+                Color.FromArgb(12, 255, 255, 255),
                 Color.FromArgb(0, 255, 255, 255));
             g.FillPath(sheenBrush, sheenPath);
 
-            // Subtle base border
-            using var baseBorderPen = new Pen(C_BORDER, S(1.2f));
+            // 1px solid #303338 base border
+            using var baseBorderPen = new Pen(C_BORDER_NORMAL, S(1.0f));
             g.DrawPath(baseBorderPen, cardPath);
 
-            // Top-edge radiant cyan-to-emerald laser highlight
+            // Precision HUD top laser accent line (#6F2428 with #FF3B30 center highlight)
             using var gradRimBrush = new LinearGradientBrush(
                 new PointF(card.X, card.Y),
                 new PointF(card.Right, card.Y),
@@ -883,17 +977,162 @@ namespace OrionGDWidget
 
             var rimCb = new ColorBlend(4)
             {
-                Positions = new[] { 0.0f, 0.25f, 0.85f, 1.0f },
+                Positions = new[] { 0.0f, 0.30f, 0.70f, 1.0f },
                 Colors    = new[] {
-                    Color.FromArgb(40, 56, 189, 248),
-                    Color.FromArgb(220, 56, 189, 248),
-                    Color.FromArgb(200, 16, 185, 129),
-                    Color.FromArgb(40, 16, 185, 129)
+                    Color.FromArgb(20, C_RED_BORDER),
+                    Color.FromArgb(210, C_RED_PRIMARY),
+                    Color.FromArgb(210, C_RED_SIGNAL),
+                    Color.FromArgb(20, C_RED_BORDER)
                 }
             };
             gradRimBrush.InterpolationColors = rimCb;
-            using var rimPen = new Pen(gradRimBrush, S(1.5f));
+            using var rimPen = new Pen(gradRimBrush, S(1.4f));
             g.DrawLine(rimPen, card.X + r, card.Y, card.Right - r, card.Y);
+        }
+
+        // ──────────────────────────────────────────────────────
+        // Particle Engine: Initialization, Physics & Constellation Field
+        // ──────────────────────────────────────────────────────
+        private void InitParticles()
+        {
+            _particles.Clear();
+            var card = _cardBounds;
+            if (card.Width <= 0 || card.Height <= 0)
+            {
+                card = new RectangleF(S(BasePad), S(BasePad), S(BaseCardW), S(BaseCardH));
+            }
+
+            int count = 46;
+            for (int i = 0; i < count; i++)
+            {
+                bool isHub = (i % 6 == 0);
+                float radius = isHub ? S(2.8f + (float)_rng.NextDouble() * 1.0f) : S(1.2f + (float)_rng.NextDouble() * 1.1f);
+                float vx = (float)(_rng.NextDouble() * 0.44 - 0.22);
+                float vy = (float)(_rng.NextDouble() * 0.38 - 0.26); // gentle upward drift
+                if (Math.Abs(vx) < 0.05f) vx = 0.09f * (_rng.Next(2) == 0 ? 1 : -1);
+                if (Math.Abs(vy) < 0.05f) vy = -0.14f;
+
+                Color col;
+                float baseAlpha;
+                int typeRoll = _rng.Next(100);
+                if (typeRoll < 55)
+                {
+                    col = C_RED_SIGNAL; // Crimson energy node
+                    baseAlpha = isHub ? 140f : 85f;
+                }
+                else if (typeRoll < 80)
+                {
+                    col = C_RED_PRIMARY; // Warm ruby node
+                    baseAlpha = isHub ? 115f : 65f;
+                }
+                else
+                {
+                    col = C_TEXT_CHIP; // High-tech silvery cyber spark
+                    baseAlpha = isHub ? 95f : 50f;
+                }
+
+                _particles.Add(new BackgroundParticle
+                {
+                    X          = card.X + (float)_rng.NextDouble() * card.Width,
+                    Y          = card.Y + (float)_rng.NextDouble() * card.Height,
+                    Vx         = vx,
+                    Vy         = vy,
+                    Radius     = radius,
+                    BaseAlpha  = baseAlpha,
+                    Phase      = (float)(_rng.NextDouble() * Math.PI * 2),
+                    PulseSpeed = 0.028f + (float)_rng.NextDouble() * 0.040f,
+                    Color      = col,
+                    IsHub      = isHub
+                });
+            }
+        }
+
+        private void UpdateParticles()
+        {
+            var card = _cardBounds;
+            if (card.Width <= 0 || _particles.Count == 0) return;
+
+            float pad = S(14f);
+            float left = card.X - pad;
+            float right = card.Right + pad;
+            float top = card.Y - pad;
+            float bottom = card.Bottom + pad;
+
+            foreach (var p in _particles)
+            {
+                p.X += p.Vx;
+                p.Y += p.Vy;
+                p.Phase += p.PulseSpeed;
+
+                if (p.X < left) p.X = right;
+                else if (p.X > right) p.X = left;
+
+                if (p.Y < top) p.Y = bottom;
+                else if (p.Y > bottom) p.Y = top;
+            }
+        }
+
+        private void DrawParticleField(Graphics g, RectangleF card)
+        {
+            if (_particles.Count == 0) InitParticles();
+
+            // 1. Constellation network lines between nearby particles
+            float maxDist = S(76f);
+            float maxDistSq = maxDist * maxDist;
+
+            for (int i = 0; i < _particles.Count; i++)
+            {
+                var p1 = _particles[i];
+                for (int j = i + 1; j < _particles.Count; j++)
+                {
+                    var p2 = _particles[j];
+                    float dx = p1.X - p2.X;
+                    float dy = p1.Y - p2.Y;
+                    float distSq = dx * dx + dy * dy;
+
+                    if (distSq < maxDistSq)
+                    {
+                        float dist = (float)Math.Sqrt(distSq);
+                        float norm = 1.0f - (dist / maxDist);
+                        // Subtle, luminous energy connecting lines
+                        int lineAlpha = (int)(norm * norm * 42f);
+                        if (lineAlpha > 2)
+                        {
+                            using var linePen = new Pen(Color.FromArgb(lineAlpha, C_RED_SIGNAL), S(0.85f));
+                            g.DrawLine(linePen, p1.X, p1.Y, p2.X, p2.Y);
+                        }
+                    }
+                }
+            }
+
+            // 2. Render particle nodes with soft glow halos
+            foreach (var p in _particles)
+            {
+                float shimmer = (float)(0.72 + 0.28 * Math.Sin(p.Phase));
+                int currentAlpha = Math.Clamp((int)(p.BaseAlpha * shimmer), 15, 230);
+
+                // Soft outer glowing aura
+                int auraAlpha = Math.Max(4, currentAlpha / 4);
+                float haloR = p.Radius * (p.IsHub ? 2.6f : 2.0f);
+                using (var haloBrush = new SolidBrush(Color.FromArgb(auraAlpha, p.Color)))
+                {
+                    g.FillEllipse(haloBrush, p.X - haloR, p.Y - haloR, haloR * 2, haloR * 2);
+                }
+
+                // Core luminous particle
+                using (var coreBrush = new SolidBrush(Color.FromArgb(currentAlpha, p.Color)))
+                {
+                    g.FillEllipse(coreBrush, p.X - p.Radius, p.Y - p.Radius, p.Radius * 2, p.Radius * 2);
+                }
+
+                // Center specular highlight for hub particles
+                if (p.IsHub && currentAlpha > 75)
+                {
+                    float specR = S(0.95f);
+                    using var specBrush = new SolidBrush(Color.FromArgb(Math.Min(255, currentAlpha + 65), 255, 245, 245));
+                    g.FillEllipse(specBrush, p.X - specR, p.Y - specR, specR * 2, specR * 2);
+                }
+            }
         }
 
         // ──────────────────────────────────────────────────────
@@ -904,16 +1143,16 @@ namespace OrionGDWidget
             float y = card.Y + S(12f);
             float x = card.X + S(18f);
 
-            // 4-point Diamond Star
-            DrawDiamondSparkle(g, x + S(4f), y + S(6f), S(4.5f), C_CYAN);
+            // Small orbital/star symbol: #FF3B30
+            DrawDiamondSparkle(g, x + S(4f), y + S(6f), S(4.5f), C_RED_SIGNAL);
 
-            // ORION IDENTITY
-            using var headBrush = new SolidBrush(Color.White);
-            g.DrawString("ORION IDENTITY", _fontTopHeader!, headBrush, x + S(14f), y);
+            // THEORION IDENTITY: uppercase letter spacing bold #F2F2F2
+            using var headBrush = new SolidBrush(C_TEXT_PRIMARY);
+            g.DrawString("THEORION IDENTITY", _fontTopHeader!, headBrush, x + S(14f), y);
 
-            // BUILD  •  SOLVE  •  IMPACT
+            // BUILD — INNOVATE — IMPACT: clean futuristic technical subtitle
             using var subBrush = new SolidBrush(C_TEXT_MUTED);
-            g.DrawString("BUILD   •   SOLVE   •   IMPACT", _fontTopSub!, subBrush, x + S(14f), y + S(13f));
+            g.DrawString("BUILD   —   INNOVATE   —   IMPACT", _fontTopSub!, subBrush, x + S(14f), y + S(14f));
 
             // Window Controls: Minimize [─] and Close [✕]
             float btnSz = S(18f);
@@ -922,27 +1161,27 @@ namespace OrionGDWidget
 
             DrawWindowButton(g, _btnMinBounds, false, _btnMinHovered);
             DrawWindowButton(g, _btnCloseBounds, true, _btnCloseHovered);
+
+            // Header bottom border: #303338
+            using var sepPen = new Pen(C_BORDER_NORMAL, S(1f));
+            g.DrawLine(sepPen, card.X + S(8f), card.Y + S(36f), card.Right - S(8f), card.Y + S(36f));
         }
 
         private void DrawWindowButton(Graphics g, RectangleF r, bool isClose, bool isHovered)
         {
             using var path = RoundedRect(r, S(4f));
 
-            Color bg = isHovered
-                ? (isClose ? Color.FromArgb(180, 239, 68, 68) : Color.FromArgb(160, 30, 41, 59))
-                : Color.FromArgb(40, 255, 255, 255);
+            Color bg = isHovered ? C_RED_DARK : C_SURFACE_HL;
             using var bgB = new SolidBrush(bg);
             g.FillPath(bgB, path);
 
-            Color borderC = isHovered
-                ? (isClose ? Color.FromArgb(255, 248, 113, 113) : C_CYAN)
-                : Color.FromArgb(30, 255, 255, 255);
+            Color borderC = isHovered ? C_RED_BORDER : C_BORDER_NORMAL;
             using var bPen = new Pen(borderC, S(0.8f));
             g.DrawPath(bPen, path);
 
             float cx = r.X + r.Width / 2f;
             float cy = r.Y + r.Height / 2f;
-            Color strokeC = isHovered ? Color.White : Color.FromArgb(200, 148, 163, 184);
+            Color strokeC = isHovered ? C_RED_SIGNAL : C_TEXT_SECOND;
             using var pen = new Pen(strokeC, S(1.2f))
             {
                 StartCap = LineCap.Round,
@@ -971,10 +1210,10 @@ namespace OrionGDWidget
             float leftX = card.X + S(22f);
             DrawWingedBrandLogo(g, leftX, cy - S(3f));
 
-            using var bBrush = new SolidBrush(Color.White);
-            g.DrawString("ORIONGD", _fontHeroTag!, bBrush, leftX + S(16f), cy - S(10f));
+            using var bBrush = new SolidBrush(C_TEXT_PRIMARY);
+            g.DrawString("THEORIONGD", _fontHeroTag!, bBrush, leftX + S(16f), cy - S(10f));
 
-            using var subB = new SolidBrush(Color.FromArgb(180, 148, 163, 184));
+            using var subB = new SolidBrush(C_TEXT_MUTED);
             g.DrawString("CODE  ×  CREATE  ×  GROW", _fontHeroSub!, subB, leftX + S(16f), cy + S(3f));
 
             // Center Holographic Crest
@@ -982,8 +1221,8 @@ namespace OrionGDWidget
             DrawCenterHoloCrest(g, cx, cy);
 
             // Right Available Pill
-            float pillW = S(116f);
-            float pillH = S(32f);
+            float pillW = S(126f);
+            float pillH = S(34f);
             _availablePillBounds = new RectangleF(card.Right - S(20f) - pillW, cy - pillH / 2f, pillW, pillH);
             DrawAvailablePill(g, _availablePillBounds, _availablePillHovered);
         }
@@ -991,8 +1230,8 @@ namespace OrionGDWidget
         private void DrawWingedBrandLogo(Graphics g, float cx, float cy)
         {
             float s = S(7f);
-            using var brush = new SolidBrush(C_CYAN);
-            using var pen   = new Pen(C_CYAN_BRIGHT, S(1.1f)) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+            using var brush = new SolidBrush(C_RED_SIGNAL);
+            using var pen   = new Pen(C_RED_BORDER, S(1.2f)) { StartCap = LineCap.Round, EndCap = LineCap.Round };
 
             // Central 4-point diamond
             PointF[] diamond = {
@@ -1015,113 +1254,118 @@ namespace OrionGDWidget
         {
             float r = S(32f);
 
-            // Radial ambient bloom
+            // Subtle red ambient bloom behind avatar
             using var radialPath = new GraphicsPath();
-            radialPath.AddEllipse(cx - r * 1.8f, cy - r * 1.8f, r * 3.6f, r * 3.6f);
+            radialPath.AddEllipse(cx - r * 1.6f, cy - r * 1.6f, r * 3.2f, r * 3.2f);
             using var pgb = new PathGradientBrush(radialPath)
             {
-                CenterColor = Color.FromArgb(55, 56, 189, 248),
-                SurroundColors = new[] { Color.FromArgb(0, 56, 189, 248) }
+                CenterColor = Color.FromArgb(40, C_RED_SIGNAL),
+                SurroundColors = new[] { Color.FromArgb(0, C_RED_SIGNAL) }
             };
             g.FillPath(pgb, radialPath);
 
-            // Tilted Gyroscope Orbital Ring 1
+            // Tilted Gyroscope Orbital Ellipse 1 with orbital node (rotating slowly 8-15s)
             var s1 = g.Save();
             g.TranslateTransform(cx, cy);
             g.RotateTransform(28f + MathF.Sin(_orbitRingAngle) * 6f);
-            using var ringPen1 = new Pen(Color.FromArgb(90, 56, 189, 248), S(1.2f));
-            ringPen1.DashStyle = DashStyle.Custom;
-            ringPen1.DashPattern = new[] { 6f, 3.5f };
-            g.DrawEllipse(ringPen1, -(r + S(12f)), -S(14f), (r + S(12f)) * 2, S(28f));
+            using (var ringPen1 = new Pen(C_RED_BORDER, S(1.1f)))
+            {
+                ringPen1.DashStyle = DashStyle.Custom;
+                ringPen1.DashPattern = new[] { 6f, 3.5f };
+                g.DrawEllipse(ringPen1, -(r + S(11f)), -S(13f), (r + S(11f)) * 2, S(26f));
+            }
+
+            // Orbital Node (tiny red light rotating on the orbit)
+            float nodeAng = _orbitRingAngle * 2.0f;
+            float nodeX = (r + S(11f)) * MathF.Cos(nodeAng);
+            float nodeY = S(13f) * MathF.Sin(nodeAng);
+            using (var nodeGlow = new SolidBrush(Color.FromArgb(70, C_RED_SIGNAL)))
+                g.FillEllipse(nodeGlow, nodeX - S(4.5f), nodeY - S(4.5f), S(9f), S(9f));
+            using (var nodeCore = new SolidBrush(C_RED_SIGNAL))
+                g.FillEllipse(nodeCore, nodeX - S(2.0f), nodeY - S(2.0f), S(4f), S(4f));
             g.Restore(s1);
 
-            // Tilted Gyroscope Orbital Ring 2
+            // Tilted Gyroscope Orbital Ellipse 2
             var s2 = g.Save();
             g.TranslateTransform(cx, cy);
             g.RotateTransform(-36f - MathF.Cos(_orbitRingAngle) * 5f);
-            using var ringPen2 = new Pen(Color.FromArgb(65, 99, 102, 241), S(1.0f));
-            g.DrawEllipse(ringPen2, -(r + S(9f)), -S(10f), (r + S(9f)) * 2, S(20f));
+            using (var ringPen2 = new Pen(Color.FromArgb(60, C_RED_BORDER), S(1.0f)))
+            {
+                g.DrawEllipse(ringPen2, -(r + S(8f)), -S(9f), (r + S(8f)) * 2, S(18f));
+            }
             g.Restore(s2);
 
-            // Center Dark Disk
-            using var circBrush = new LinearGradientBrush(
-                new PointF(cx - r, cy - r),
-                new PointF(cx + r, cy + r),
-                Color.FromArgb(255, 20, 28, 48),
-                Color.FromArgb(255, 8, 12, 22));
+            // Inner background: #08090B
+            using var circBrush = new SolidBrush(C_ENV_BLACK);
             g.FillEllipse(circBrush, cx - r, cy - r, r * 2, r * 2);
 
-            // Vibrant Multi-Color Glowing Rim (Cyan -> Emerald)
-            using var rimBrush = new LinearGradientBrush(
-                new PointF(cx - r, cy - r),
-                new PointF(cx + r, cy + r),
-                C_CYAN, C_EMERALD);
-            using var rimPen = new Pen(rimBrush, S(2.0f));
-            g.DrawEllipse(rimPen, cx - r, cy - r, r * 2, r * 2);
+            // Outer ring: #6F2428
+            using var outerRingPen = new Pen(C_RED_BORDER, S(2.4f));
+            g.DrawEllipse(outerRingPen, cx - r, cy - r, r * 2, r * 2);
 
-            // Inner specular rim arc
-            using var innerPen = new Pen(Color.FromArgb(85, 255, 255, 255), S(1.0f));
-            g.DrawArc(innerPen, cx - r + S(2f), cy - r + S(2f), (r - S(2f)) * 2, (r - S(2f)) * 2, 200, 140);
+            // Active ring: #E53935
+            using var activeRingPen = new Pen(C_RED_PRIMARY, S(1.2f));
+            g.DrawEllipse(activeRingPen, cx - r + S(1f), cy - r + S(1f), (r - S(1f)) * 2, (r - S(1f)) * 2);
 
-            // Monogram "GD"
+            // Highlight: #FF3B30 top arc
+            using var hlPen = new Pen(C_RED_SIGNAL, S(1.5f));
+            g.DrawArc(hlPen, cx - r + S(1f), cy - r + S(1f), (r - S(1f)) * 2, (r - S(1f)) * 2, 210, 120);
+
+            // Center Text "OGD" in #F2F2F2
             var sf = new StringFormat
             {
                 Alignment     = StringAlignment.Center,
                 LineAlignment = StringAlignment.Center
             };
-            using var textShadow = new SolidBrush(Color.FromArgb(140, 0, 0, 0));
-            g.DrawString("GD", _fontMonogram!, textShadow,
+            using var textShadow = new SolidBrush(Color.FromArgb(180, 0, 0, 0));
+            g.DrawString("OGD", _fontMonogram!, textShadow,
                 new RectangleF(cx - r, cy - r + S(1.0f), r * 2, r * 2), sf);
 
-            using var textBrush = new LinearGradientBrush(
-                new PointF(cx, cy - S(14f)),
-                new PointF(cx, cy + S(14f)),
-                Color.White,
-                C_CYAN_BRIGHT);
-            g.DrawString("GD", _fontMonogram!, textBrush,
+            using var textBrush = new SolidBrush(C_TEXT_PRIMARY);
+            g.DrawString("OGD", _fontMonogram!, textBrush,
                 new RectangleF(cx - r, cy - r - S(0.5f), r * 2, r * 2), sf);
 
-            // Cyan 4-point Diamond Starburst below "GD"
-            DrawDiamondSparkle(g, cx, cy + S(16.5f), S(3.5f), C_CYAN);
+            // Tiny Red Light / Diamond Sparkle below "OGD": #FF3B30
+            DrawDiamondSparkle(g, cx, cy + S(16.5f), S(3.5f), C_RED_SIGNAL);
         }
 
         private void DrawAvailablePill(Graphics g, RectangleF r, bool isHovered)
         {
             using var path = RoundedRect(r, r.Height / 2f);
 
-            Color bg = isHovered ? Color.FromArgb(45, 16, 185, 129) : Color.FromArgb(22, 16, 185, 129);
+            Color bg = isHovered ? C_CHARCOAL_SEC : C_CHARCOAL_MAIN;
             using var bBrush = new SolidBrush(bg);
             g.FillPath(bBrush, path);
 
-            Color bc = isHovered ? C_EMERALD : Color.FromArgb(100, 16, 185, 129);
+            Color bc = isHovered ? C_RED_PRIMARY : C_RED_BORDER;
             using var bPen = new Pen(bc, S(1.1f));
             g.DrawPath(bPen, path);
 
-            // Pulsing Emerald Radar Dot
+            // Pulsing Red Radar Dot: #FF3B30 (NO GREEN)
             float dotX = r.X + S(12f);
             float dotY = r.Y + r.Height / 2f;
             float dotR = S(3.0f);
 
             float ripple = (float)(Math.Sin(_pulse * 1.5f) * 0.5 + 0.5);
-            int ripAlpha = Math.Clamp((int)((1f - ripple) * 110), 0, 255);
+            int ripAlpha = Math.Clamp((int)((1f - ripple) * 90), 0, 255);
             float ripR = dotR + ripple * S(4.5f);
-            using var ripBrush = new SolidBrush(Color.FromArgb(ripAlpha, C_EMERALD));
+            using var ripBrush = new SolidBrush(Color.FromArgb(ripAlpha, C_RED_SIGNAL));
             g.FillEllipse(ripBrush, dotX - ripR, dotY - ripR, ripR * 2, ripR * 2);
 
-            using var dotCore = new SolidBrush(C_EMERALD);
+            using var dotCore = new SolidBrush(C_RED_SIGNAL);
             g.FillEllipse(dotCore, dotX - dotR, dotY - dotR, dotR * 2, dotR * 2);
 
-            // Text: Line 1 "AVAILABLE"
-            using var t1 = new SolidBrush(Color.FromArgb(255, 167, 243, 208));
+            // Text: Line 1 "AVAILABLE" in #F2F2F2
+            using var t1 = new SolidBrush(C_TEXT_PRIMARY);
             g.DrawString("AVAILABLE", _fontAvailStatus!, t1, r.X + S(22f), r.Y + S(4.5f));
 
-            // Text: Line 2 "FOR COLLABORATION"
-            using var t2 = new SolidBrush(Color.FromArgb(220, 110, 231, 183));
-            g.DrawString("FOR COLLABORATION", _fontAvailSub!, t2, r.X + S(22f), r.Y + S(16.5f));
+            // Text: Line 2 "FOR COLLABORATION" in #A7AAAE
+            using var t2 = new SolidBrush(C_TEXT_SECOND);
+            g.DrawString("FOR COLLABORATION", _fontAvailSub!, t2, r.X + S(22f), r.Y + S(17.5f));
         }
 
         // ──────────────────────────────────────────────────────
-        // 5. Identity Titles: ORIONGD, Name, Pill, Bio
+        // 5. Identity Titles: THEORIONGD, Name, Pill, Bio
         // ──────────────────────────────────────────────────────
         private float DrawIdentityTitles(Graphics g, RectangleF card, float y)
         {
@@ -1132,32 +1376,28 @@ namespace OrionGDWidget
                 LineAlignment = StringAlignment.Near
             };
 
-            // ORIONGD
-            using var brandBrush = new LinearGradientBrush(
-                new PointF(cx - S(80f), y),
-                new PointF(cx + S(80f), y),
-                Color.White,
-                C_CYAN);
-            g.DrawString("ORIONGD", _fontBrand!, brandBrush, cx, y, sf);
-            float h1 = g.MeasureString("ORIONGD", _fontBrand!).Height;
+            // THEORIONGD: Large Bold #F2F2F2
+            using var brandBrush = new SolidBrush(C_TEXT_PRIMARY);
+            g.DrawString("THEORIONGD", _fontBrand!, brandBrush, cx, y, sf);
+            float h1 = g.MeasureString("THEORIONGD", _fontBrand!).Height;
             y += h1 + S(1f);
 
-            // Godfrey T. R
+            // Godfrey T. R: Medium-large #F2F2F2
             using var nameBrush = new SolidBrush(C_TEXT_PRIMARY);
             g.DrawString("Godfrey T. R", _fontName!, nameBrush, cx, y, sf);
             float h2 = g.MeasureString("Godfrey T. R", _fontName!).Height;
             y += h2 + S(3f);
 
-            // [ SOFTWARE ENGINEER ] Capsule Pill
-            float pillW = S(168f);
-            float pillH = S(21f);
+            // [ JAVA FULL STACK & SOFTWARE ENGINEER ] Capsule Pill
+            float pillW = S(216f);
+            float pillH = S(23f);
             var roleRect = new RectangleF(cx - pillW / 2f, y, pillW, pillH);
             using var rolePath = RoundedRect(roleRect, pillH / 2f);
 
-            using var roleBg = new SolidBrush(Color.FromArgb(28, 56, 189, 248));
+            using var roleBg = new SolidBrush(C_CHARCOAL_SEC);
             g.FillPath(roleBg, rolePath);
 
-            using var roleBorder = new Pen(Color.FromArgb(90, 56, 189, 248), S(1f));
+            using var roleBorder = new Pen(C_RED_BORDER, S(1f));
             g.DrawPath(roleBorder, rolePath);
 
             var pillSf = new StringFormat
@@ -1165,31 +1405,31 @@ namespace OrionGDWidget
                 Alignment     = StringAlignment.Center,
                 LineAlignment = StringAlignment.Center
             };
-            using var roleTxt = new SolidBrush(C_CYAN);
-            g.DrawString("SOFTWARE ENGINEER", _fontRolePill!, roleTxt, roleRect, pillSf);
+            using var roleTxt = new SolidBrush(C_RED_SIGNAL);
+            g.DrawString("JAVA FULL STACK & SOFTWARE ENGINEER", _fontRolePill!, roleTxt, roleRect, pillSf);
             y += pillH + S(6f);
 
-            // Bio statement
-            const string bio = "Architecting resilient full-stack systems, intelligent AI platforms, security frameworks, and next-generation UI/UX.";
-            var bioRect = new RectangleF(card.X + S(24f), y, card.Width - S(48f), S(26f));
+            // Bio statement: #A7AAAE
+            const string bio = "B.E. CSE (2027) • Java full-stack engineer building resilient systems, multi-agent AI assistants with RAG, zero-trust architectures, and edge-AI computer vision solutions.";
+            var bioRect = new RectangleF(card.X + S(20f), y, card.Width - S(40f), S(32f));
             using var bioBrush = new SolidBrush(C_TEXT_SECOND);
             g.DrawString(bio, _fontBio!, bioBrush, bioRect, sf);
-            y += S(26f);
+            y += S(32f);
 
             return y;
         }
 
         // ──────────────────────────────────────────────────────
-        // 6. Focus Areas 3x2 Grid
+        // 6. Capability Matrix 3x2 Grid (Industrial Charcoal + Red Accent)
         // ──────────────────────────────────────────────────────
         private float DrawFocusGrid(Graphics g, RectangleF card, float y)
         {
             float margin = S(16f);
             float gapX   = S(8f);
-            float gapY   = S(7f);
+            float gapY   = S(8f);
             float totalW = card.Width - margin * 2;
             float cardW  = (totalW - gapX * 2f) / 3f;
-            float cardH  = S(44f);
+            float cardH  = S(50f);
 
             for (int i = 0; i < _focusCards.Count; i++)
             {
@@ -1203,33 +1443,39 @@ namespace OrionGDWidget
 
                 using var path = RoundedRect(fc.Bounds, S(8f));
 
-                Color bg = fc.IsHovered ? Color.FromArgb(32, fc.AccentColor) : C_TILE_BG;
+                Color bg = fc.IsHovered ? C_SURFACE_ELEV : C_CHARCOAL_SEC;
                 using var bgB = new SolidBrush(bg);
                 g.FillPath(bgB, path);
 
-                Color bc = fc.IsHovered ? fc.AccentColor : C_TILE_BORDER;
+                Color bc = fc.IsHovered ? C_RED_PRIMARY : C_BORDER_NORMAL;
                 using var bPen = new Pen(bc, S(1f));
                 g.DrawPath(bPen, path);
 
-                float boxSz = S(30f);
+                if (fc.IsHovered)
+                {
+                    using var glowPen = new Pen(Color.FromArgb(40, C_RED_SIGNAL), S(2f));
+                    g.DrawPath(glowPen, path);
+                }
+
+                float boxSz = S(34f);
                 var boxRect = new RectangleF(bx + S(7f), by + (cardH - boxSz) / 2f, boxSz, boxSz);
                 using var boxPath = RoundedRect(boxRect, S(6f));
 
-                using var boxBg = new SolidBrush(Color.FromArgb(35, fc.AccentColor));
+                using var boxBg = new SolidBrush(C_CHARCOAL_MAIN);
                 g.FillPath(boxBg, boxPath);
 
-                using var boxBorder = new Pen(Color.FromArgb(120, fc.AccentColor), S(1f));
+                using var boxBorder = new Pen(fc.IsHovered ? C_RED_BORDER : C_BORDER_NORMAL, S(1f));
                 g.DrawPath(boxBorder, boxPath);
 
-                DrawFocusVectorIcon(g, fc.Type, boxRect, fc.AccentColor);
+                DrawFocusVectorIcon(g, fc.Type, boxRect, C_RED_SIGNAL);
 
                 float textX = boxRect.Right + S(8f);
                 Color tc = fc.IsHovered ? Color.White : C_TEXT_PRIMARY;
                 using var tBrush = new SolidBrush(tc);
-                g.DrawString(fc.Title, _fontFocusTitle!, tBrush, textX, by + S(7f));
+                g.DrawString(fc.Title, _fontFocusTitle!, tBrush, textX, by + S(8f));
 
-                using var subBrush = new SolidBrush(C_TEXT_MUTED);
-                g.DrawString(fc.Subtitle, _fontFocusSub!, subBrush, textX, by + S(22f));
+                using var subBrush = new SolidBrush(C_TEXT_SECOND);
+                g.DrawString(fc.Subtitle, _fontFocusSub!, subBrush, textX, by + S(26f));
             }
 
             return y + (cardH * 2f) + gapY;
@@ -1259,23 +1505,21 @@ namespace OrionGDWidget
                     g.DrawLine(pen, cx - br * 0.8f, cy, cx + br * 0.8f, cy);
                     break;
 
-                case "ux-user": // User profile silhouette
-                    float ur = S(3.0f);
-                    g.DrawEllipse(pen, cx - ur, cy - ur * 1.8f, ur * 2f, ur * 2f);
-                    g.DrawArc(pen, cx - ur * 1.8f, cy - ur * 0.2f, ur * 3.6f, ur * 3.2f, 190, 160);
+                case "vision": // Eye / Optical scanner
+                    float er = S(4.8f);
+                    g.DrawArc(pen, cx - er, cy - er * 0.7f, er * 2f, er * 1.4f, 20, 140);
+                    g.DrawArc(pen, cx - er, cy - er * 0.7f, er * 2f, er * 1.4f, 200, 140);
+                    g.FillEllipse(brush, cx - S(1.6f), cy - S(1.6f), S(3.2f), S(3.2f));
                     break;
 
-                case "ai-llm": // Lightning bolt
-                    float ls = S(4.5f);
-                    PointF[] bolt = {
-                        new PointF(cx + ls * 0.2f, cy - ls),
-                        new PointF(cx - ls * 0.7f, cy + ls * 0.1f),
-                        new PointF(cx, cy + ls * 0.1f),
-                        new PointF(cx - ls * 0.2f, cy + ls),
-                        new PointF(cx + ls * 0.7f, cy - ls * 0.1f),
-                        new PointF(cx, cy - ls * 0.1f)
-                    };
-                    g.FillPolygon(brush, bolt);
+                case "backend": // Stacked database / server nodes
+                    float bsw = S(4.8f);
+                    float bsh = S(2.2f);
+                    g.DrawEllipse(pen, cx - bsw, cy - S(4.0f), bsw * 2f, bsh * 2f);
+                    g.DrawArc(pen, cx - bsw, cy - S(1.0f), bsw * 2f, bsh * 2f, 0, 180);
+                    g.DrawArc(pen, cx - bsw, cy + S(2.0f), bsw * 2f, bsh * 2f, 0, 180);
+                    g.DrawLine(pen, cx - bsw, cy - S(1.8f), cx - bsw, cy + S(3.0f));
+                    g.DrawLine(pen, cx + bsw, cy - S(1.8f), cx + bsw, cy + S(3.0f));
                     break;
 
                 case "security": // Cyber shield
@@ -1292,7 +1536,33 @@ namespace OrionGDWidget
                     g.DrawLine(pen, cx, cy - sh * 0.6f, cx, cy + sh * 0.4f);
                     break;
 
-                case "uiux": // Artist color palette
+                case "mobile": // Smartphone outline with home dot
+                    float mw = S(3.8f);
+                    float mh = S(5.5f);
+                    g.DrawRectangle(pen, cx - mw, cy - mh, mw * 2f, mh * 2f);
+                    g.DrawLine(pen, cx - S(1.5f), cy + mh * 0.65f, cx + S(1.5f), cy + mh * 0.65f);
+                    break;
+
+                case "ux-user":
+                    float ur = S(3.0f);
+                    g.DrawEllipse(pen, cx - ur, cy - ur * 1.8f, ur * 2f, ur * 2f);
+                    g.DrawArc(pen, cx - ur * 1.8f, cy - ur * 0.2f, ur * 3.6f, ur * 3.2f, 190, 160);
+                    break;
+
+                case "ai-llm":
+                    float ls = S(4.5f);
+                    PointF[] bolt = {
+                        new PointF(cx + ls * 0.2f, cy - ls),
+                        new PointF(cx - ls * 0.7f, cy + ls * 0.1f),
+                        new PointF(cx, cy + ls * 0.1f),
+                        new PointF(cx - ls * 0.2f, cy + ls),
+                        new PointF(cx + ls * 0.7f, cy - ls * 0.1f),
+                        new PointF(cx, cy - ls * 0.1f)
+                    };
+                    g.FillPolygon(brush, bolt);
+                    break;
+
+                case "uiux":
                     float pr = S(5.2f);
                     g.DrawEllipse(pen, cx - pr, cy - pr, pr * 2f, pr * 1.8f);
                     g.FillEllipse(brush, cx - pr * 0.4f, cy - pr * 0.3f, S(2.2f), S(2.2f));
@@ -1303,7 +1573,7 @@ namespace OrionGDWidget
         }
 
         // ──────────────────────────────────────────────────────
-        // 7. Skills & Technologies Section (2 Rows)
+        // 7. Skills & Technologies Section (Technical Chips)
         // ──────────────────────────────────────────────────────
         private float DrawSkillsSection(Graphics g, RectangleF card, float y)
         {
@@ -1311,44 +1581,32 @@ namespace OrionGDWidget
 
             // Section Header: ⊞ SKILLS & TECHNOLOGIES
             float iconX = card.X + margin;
-            Draw4SquaresIcon(g, iconX, y + S(5f), S(3.5f), C_CYAN);
+            Draw4SquaresIcon(g, iconX, y + S(5f), S(3.5f), C_RED_SIGNAL);
 
-            using var secB = new SolidBrush(C_CYAN);
+            using var secB = new SolidBrush(C_TEXT_SECOND);
             g.DrawString("SKILLS & TECHNOLOGIES", _fontSecHeader!, secB, iconX + S(14f), y);
             y += S(17f);
 
-            // Row 1: 7 Pills (C, C++, Java, Python, SQL, React, MERN)
+            // 10 Pills in 2 rows of 5
             float totalW = card.Width - margin * 2;
-            int row1Count = 7;
+            int cols = 5;
             float gapX = S(6f);
-            float pillW = (totalW - (row1Count - 1) * gapX) / row1Count;
-            float pillH = S(24f);
+            float gapY = S(6f);
+            float pillW = (totalW - (cols - 1) * gapX) / cols;
+            float pillH = S(28f);
 
-            for (int i = 0; i < row1Count; i++)
+            for (int i = 0; i < _skillPills.Count; i++)
             {
+                int col = i % cols;
+                int row = i / cols;
                 var sp = _skillPills[i];
-                float px = card.X + margin + i * (pillW + gapX);
-                sp.Bounds = new RectangleF(px, y, pillW, pillH);
+                float px = card.X + margin + col * (pillW + gapX);
+                float py = y + row * (pillH + gapY);
+                sp.Bounds = new RectangleF(px, py, pillW, pillH);
                 DrawSkillPillItem(g, sp);
             }
 
-            y += pillH + S(6f);
-
-            // Row 2: 3 Pills (UI/UX, 3D/XR, Cybersecurity) centered
-            int row2Count = 3;
-            float r2PillW = S(88f);
-            float r2TotalW = row2Count * r2PillW + (row2Count - 1) * gapX;
-            float r2StartX = card.X + (card.Width - r2TotalW) / 2f;
-
-            for (int i = 0; i < row2Count; i++)
-            {
-                var sp = _skillPills[row1Count + i];
-                float px = r2StartX + i * (r2PillW + gapX);
-                sp.Bounds = new RectangleF(px, y, r2PillW, pillH);
-                DrawSkillPillItem(g, sp);
-            }
-
-            return y + pillH;
+            return y + (pillH * 2f) + gapY;
         }
 
         private static void Draw4SquaresIcon(Graphics g, float cx, float cy, float s, Color c)
@@ -1364,13 +1622,19 @@ namespace OrionGDWidget
         {
             using var path = RoundedRect(sp.Bounds, sp.Bounds.Height / 2f);
 
-            Color bg = sp.IsHovered ? Color.FromArgb(40, 56, 189, 248) : Color.FromArgb(16, 255, 255, 255);
+            Color bg = sp.IsHovered ? C_SURFACE_ELEV : C_CHARCOAL_MAIN;
             using var bgB = new SolidBrush(bg);
             g.FillPath(bgB, path);
 
-            Color bc = sp.IsHovered ? C_CYAN : Color.FromArgb(45, 56, 189, 248);
+            Color bc = sp.IsHovered ? C_RED_PRIMARY : C_BORDER_NORMAL;
             using var bPen = new Pen(bc, S(1f));
             g.DrawPath(bPen, path);
+
+            if (sp.IsHovered)
+            {
+                using var glowPen = new Pen(Color.FromArgb(40, C_RED_SIGNAL), S(2f));
+                g.DrawPath(glowPen, path);
+            }
 
             // Center icon + text as a group inside the pill
             SizeF textSize = g.MeasureString(sp.Name, _fontSkillPill!);
@@ -1382,10 +1646,11 @@ namespace OrionGDWidget
 
             float iconX = startX + iconRadius;
             float iconY = sp.Bounds.Y + sp.Bounds.Height / 2f;
-            DrawSkillBrandIcon(g, sp.Type, iconX, iconY);
+            Color iconColor = sp.IsHovered ? C_RED_SIGNAL : C_RED_PRIMARY;
+            DrawSkillBrandIcon(g, sp.Type, iconX, iconY, iconColor);
 
             // Text Label
-            Color tc = sp.IsHovered ? Color.White : C_TEXT_PRIMARY;
+            Color tc = sp.IsHovered ? Color.White : C_TEXT_CHIP;
             using var tb = new SolidBrush(tc);
             var sf = new StringFormat
             {
@@ -1398,165 +1663,281 @@ namespace OrionGDWidget
             g.DrawString(sp.Name, _fontSkillPill!, tb, textRect, sf);
         }
 
-        private void DrawSkillBrandIcon(Graphics g, string type, float cx, float cy)
+        private void DrawSkillBrandIcon(Graphics g, string type, float cx, float cy, Color iconColor)
         {
             float s = S(4.5f);
-            using var cyanBrush = new SolidBrush(C_CYAN);
+            using var icBrush = new SolidBrush(iconColor);
+            using var icPen = new Pen(iconColor, S(1.1f)) { StartCap = LineCap.Round, EndCap = LineCap.Round };
 
             switch (type)
             {
-                case "c":
-                    using (var cBrush = new SolidBrush(Color.FromArgb(255, 59, 130, 246)))
-                        g.FillEllipse(cBrush, cx - s, cy - s, s * 2, s * 2);
-                    using (var f = new Font("Segoe UI", S(6.0f), FontStyle.Bold, GraphicsUnit.Pixel))
-                    using (var w = new SolidBrush(Color.White))
-                        g.DrawString("C", f, w, cx - S(3f), cy - S(4.5f));
-                    break;
-
-                case "cpp":
-                    using (var cBrush = new SolidBrush(Color.FromArgb(255, 37, 99, 235)))
-                        g.FillEllipse(cBrush, cx - s, cy - s, s * 2, s * 2);
-                    using (var f = new Font("Segoe UI", S(5.5f), FontStyle.Bold, GraphicsUnit.Pixel))
-                    using (var w = new SolidBrush(Color.White))
-                        g.DrawString("C+", f, w, cx - S(4f), cy - S(4.5f));
-                    break;
-
                 case "java":
-                    using (var jPen = new Pen(Color.FromArgb(255, 249, 115, 22), S(1.1f)))
-                    {
-                        g.DrawArc(jPen, cx - s * 0.8f, cy - s * 0.5f, s * 1.4f, s * 1.4f, 0, 180);
-                        g.DrawLine(jPen, cx - s * 0.8f, cy - s * 0.5f, cx + s * 0.6f, cy - s * 0.5f);
-                        g.DrawArc(jPen, cx + s * 0.5f, cy - s * 0.5f, s * 0.7f, s * 0.7f, -90, 180);
-                    }
+                    g.DrawArc(icPen, cx - s * 0.8f, cy - s * 0.5f, s * 1.4f, s * 1.4f, 0, 180);
+                    g.DrawLine(icPen, cx - s * 0.8f, cy - s * 0.5f, cx + s * 0.6f, cy - s * 0.5f);
+                    g.DrawArc(icPen, cx + s * 0.5f, cy - s * 0.5f, s * 0.7f, s * 0.7f, -90, 180);
                     break;
 
                 case "python":
-                    using (var pyB = new SolidBrush(Color.FromArgb(255, 59, 130, 246)))
-                        g.FillEllipse(pyB, cx - s * 0.8f, cy - s * 0.8f, s * 1.1f, s * 1.1f);
-                    using (var pyY = new SolidBrush(Color.FromArgb(255, 234, 179, 8)))
-                        g.FillEllipse(pyY, cx - s * 0.3f, cy - s * 0.3f, s * 1.1f, s * 1.1f);
+                    g.DrawArc(icPen, cx - s * 0.8f, cy - s * 0.8f, s * 1.2f, s * 1.2f, 90, 270);
+                    g.DrawArc(icPen, cx - s * 0.4f, cy - s * 0.4f, s * 1.2f, s * 1.2f, 270, 270);
+                    g.FillEllipse(icBrush, cx - s * 0.3f, cy - s * 0.6f, S(1.6f), S(1.6f));
+                    g.FillEllipse(icBrush, cx + s * 0.1f, cy + s * 0.4f, S(1.6f), S(1.6f));
                     break;
 
-                case "sql":
-                    using (var sqlPen = new Pen(C_CYAN, S(1.1f)))
-                    {
-                        g.DrawEllipse(sqlPen, cx - s, cy - s * 0.8f, s * 2f, s * 0.7f);
-                        g.DrawArc(sqlPen, cx - s, cy - s * 0.2f, s * 2f, s * 0.7f, 0, 180);
-                        g.DrawArc(sqlPen, cx - s, cy + s * 0.4f, s * 2f, s * 0.7f, 0, 180);
-                        g.DrawLine(sqlPen, cx - s, cy - s * 0.5f, cx - s, cy + s * 0.75f);
-                        g.DrawLine(sqlPen, cx + s, cy - s * 0.5f, cx + s, cy + s * 0.75f);
-                    }
+                case "spring":
+                    PointF[] spLeaf = {
+                        new PointF(cx - s * 0.7f, cy + s * 0.7f),
+                        new PointF(cx - s * 0.3f, cy - s * 0.7f),
+                        new PointF(cx + s * 0.7f, cy - s * 0.7f),
+                        new PointF(cx + s * 0.3f, cy + s * 0.7f)
+                    };
+                    g.FillPolygon(icBrush, spLeaf);
+                    g.DrawLine(icPen, cx - s * 0.5f, cy + s * 0.6f, cx + s * 0.5f, cy - s * 0.6f);
                     break;
 
                 case "react":
-                    using (var rPen = new Pen(Color.FromArgb(255, 97, 218, 251), S(1.0f)))
-                    {
-                        g.DrawEllipse(rPen, cx - s, cy - s * 0.45f, s * 2f, s * 0.9f);
-                        g.DrawEllipse(rPen, cx - s * 0.45f, cy - s, s * 0.9f, s * 2f);
-                        g.FillEllipse(cyanBrush, cx - S(1.2f), cy - S(1.2f), S(2.4f), S(2.4f));
-                    }
+                    g.DrawEllipse(icPen, cx - s, cy - s * 0.45f, s * 2f, s * 0.9f);
+                    g.DrawEllipse(icPen, cx - s * 0.45f, cy - s, s * 0.9f, s * 2f);
+                    g.FillEllipse(icBrush, cx - S(1.2f), cy - S(1.2f), S(2.4f), S(2.4f));
                     break;
 
-                case "mern":
-                    using (var leafB = new SolidBrush(Color.FromArgb(255, 34, 197, 94)))
-                    {
-                        PointF[] leaf = {
-                            new PointF(cx, cy - s),
-                            new PointF(cx + s * 0.8f, cy),
-                            new PointF(cx, cy + s),
-                            new PointF(cx - s * 0.4f, cy)
-                        };
-                        g.FillPolygon(leafB, leaf);
-                    }
+                case "cpp":
+                case "c":
+                    g.FillEllipse(icBrush, cx - s, cy - s, s * 2, s * 2);
+                    using (var f = new Font("Segoe UI", S(5.5f), FontStyle.Bold, GraphicsUnit.Pixel))
+                    using (var w = new SolidBrush(C_CHARCOAL_MAIN))
+                        g.DrawString("C++", f, w, cx - S(4.5f), cy - S(4.5f));
                     break;
 
-                case "uiux":
-                    DrawDiamondSparkle(g, cx, cy, s, Color.FromArgb(255, 236, 72, 153));
+                case "node":
+                    float nh = s * 0.9f;
+                    PointF[] nHex = {
+                        new PointF(cx, cy - nh),
+                        new PointF(cx + nh * 0.85f, cy - nh * 0.5f),
+                        new PointF(cx + nh * 0.85f, cy + nh * 0.5f),
+                        new PointF(cx, cy + nh),
+                        new PointF(cx - nh * 0.85f, cy + nh * 0.5f),
+                        new PointF(cx - nh * 0.85f, cy - nh * 0.5f)
+                    };
+                    g.DrawPolygon(icPen, nHex);
+                    g.FillEllipse(icBrush, cx - S(1.2f), cy - S(1.2f), S(2.4f), S(2.4f));
                     break;
 
-                case "3d":
-                    using (var cubePen = new Pen(C_CYAN, S(1.0f)))
-                    {
-                        g.DrawRectangle(cubePen, cx - s * 0.8f, cy - s * 0.8f, s * 1.6f, s * 1.6f);
-                        g.DrawLine(cubePen, cx - s * 0.8f, cy - s * 0.8f, cx + s * 0.8f, cy + s * 0.8f);
-                    }
+                case "fastapi":
+                    PointF[] fa = {
+                        new PointF(cx + s * 0.2f, cy - s * 0.9f),
+                        new PointF(cx - s * 0.6f, cy + s * 0.1f),
+                        new PointF(cx, cy + s * 0.1f),
+                        new PointF(cx - s * 0.2f, cy + s * 0.9f),
+                        new PointF(cx + s * 0.6f, cy - s * 0.1f),
+                        new PointF(cx, cy - s * 0.1f)
+                    };
+                    g.FillPolygon(icBrush, fa);
+                    break;
+
+                case "sql":
+                    g.DrawEllipse(icPen, cx - s, cy - s * 0.8f, s * 2f, s * 0.7f);
+                    g.DrawArc(icPen, cx - s, cy - s * 0.2f, s * 2f, s * 0.7f, 0, 180);
+                    g.DrawArc(icPen, cx - s, cy + s * 0.4f, s * 2f, s * 0.7f, 0, 180);
+                    g.DrawLine(icPen, cx - s, cy - s * 0.5f, cx - s, cy + s * 0.75f);
+                    g.DrawLine(icPen, cx + s, cy - s * 0.5f, cx + s, cy + s * 0.75f);
+                    break;
+
+                case "mongo":
+                    PointF[] mLeaf = {
+                        new PointF(cx, cy - s * 0.9f),
+                        new PointF(cx + s * 0.6f, cy),
+                        new PointF(cx, cy + s * 0.9f),
+                        new PointF(cx - s * 0.4f, cy)
+                    };
+                    g.FillPolygon(icBrush, mLeaf);
                     break;
 
                 case "cybersecurity":
-                    using (var sPen = new Pen(Color.FromArgb(255, 56, 189, 248), S(1.1f)))
-                    {
-                        PointF[] sh = {
-                            new PointF(cx - s * 0.8f, cy - s * 0.9f),
-                            new PointF(cx + s * 0.8f, cy - s * 0.9f),
-                            new PointF(cx + s * 0.8f, cy + s * 0.1f),
-                            new PointF(cx, cy + s),
-                            new PointF(cx - s * 0.8f, cy + s * 0.1f)
-                        };
-                        g.DrawPolygon(sPen, sh);
-                    }
+                    PointF[] sh = {
+                        new PointF(cx - s * 0.8f, cy - s * 0.9f),
+                        new PointF(cx + s * 0.8f, cy - s * 0.9f),
+                        new PointF(cx + s * 0.8f, cy + s * 0.1f),
+                        new PointF(cx, cy + s),
+                        new PointF(cx - s * 0.8f, cy + s * 0.1f)
+                    };
+                    g.DrawPolygon(icPen, sh);
                     break;
             }
         }
 
         // ──────────────────────────────────────────────────────
-        // 8. Certifications & Indian Patent Split Row (Proportional)
+        // 8. Internship Experience Section (3 Industry Roles from Resume)
         // ──────────────────────────────────────────────────────
-        private float DrawCertAndPatentRow(Graphics g, RectangleF card, float y)
+        private float DrawExperienceSection(Graphics g, RectangleF card, float y)
         {
             float margin = S(16f);
-            float gapX   = S(8f);
-            float totalW = card.Width - margin * 2;
-            float certW  = (totalW - gapX) * 0.58f;
-            float patW   = totalW - certW - gapX;
-            float cardH  = S(58f);
 
-            _certCardBounds   = new RectangleF(card.X + margin, y, certW, cardH);
-            _patentCardBounds = new RectangleF(card.X + margin + certW + gapX, y, patW, cardH);
+            // Section Header: 💼 INTERNSHIP EXPERIENCE
+            float iconX = card.X + margin;
+            DrawBriefcaseIcon(g, iconX + S(3f), y + S(6f), S(4f), C_RED_SIGNAL);
+
+            using var secB = new SolidBrush(C_TEXT_SECOND);
+            g.DrawString("INTERNSHIP EXPERIENCE", _fontSecHeader!, secB, iconX + S(14f), y);
+            y += S(17f);
+
+            float totalW = card.Width - margin * 2;
+            int count = _experienceCards.Count;
+            float gapX = S(8f);
+            float cardW = (totalW - (count - 1) * gapX) / count;
+            float cardH = S(62f);
+
+            for (int i = 0; i < count; i++)
+            {
+                var ec = _experienceCards[i];
+                float bx = card.X + margin + i * (cardW + gapX);
+                ec.Bounds = new RectangleF(bx, y, cardW, cardH);
+
+                using var path = RoundedRect(ec.Bounds, S(8f));
+
+                Color bg = ec.IsHovered ? C_SURFACE_ELEV : C_CHARCOAL_MAIN;
+                using var bgB = new SolidBrush(bg);
+                g.FillPath(bgB, path);
+
+                Color bc = ec.IsHovered ? C_RED_PRIMARY : C_BORDER_NORMAL;
+                using var bPen = new Pen(bc, S(1f));
+                g.DrawPath(bPen, path);
+
+                if (ec.IsHovered)
+                {
+                    using var glowPen = new Pen(Color.FromArgb(40, C_RED_SIGNAL), S(2f));
+                    g.DrawPath(glowPen, path);
+                }
+
+                // Top: Company Name (Left) & Period (Right)
+                float innerPadX = S(9f);
+                float topY = y + S(7f);
+                Color compColor = ec.IsHovered ? Color.White : C_TEXT_PRIMARY;
+                using (var compBrush = new SolidBrush(compColor))
+                {
+                    g.DrawString(ec.Company, _fontExpCompany!, compBrush, bx + innerPadX, topY);
+                }
+
+                using (var perBrush = new SolidBrush(C_RED_SIGNAL))
+                {
+                    var perSf = new StringFormat
+                    {
+                        Alignment     = StringAlignment.Far,
+                        LineAlignment = StringAlignment.Near
+                    };
+                    g.DrawString(ec.Period, _fontExpPeriod!, perBrush, bx + cardW - innerPadX, topY + S(1.2f), perSf);
+                }
+
+                // Middle: Role Title (Bold White)
+                float roleY = topY + S(15.5f);
+                using (var roleBrush = new SolidBrush(Color.White))
+                {
+                    g.DrawString(ec.Role, _fontExpRole!, roleBrush, bx + innerPadX, roleY);
+                }
+
+                // Bottom: Metric Highlights / Details
+                float detY = roleY + S(15f);
+                using (var detBrush = new SolidBrush(C_TEXT_MUTED))
+                {
+                    var detRect = new RectangleF(bx + innerPadX, detY, cardW - innerPadX * 2f, S(16f));
+                    var detSf = new StringFormat
+                    {
+                        FormatFlags = StringFormatFlags.NoWrap,
+                        Trimming    = StringTrimming.EllipsisCharacter
+                    };
+                    g.DrawString(ec.Detail, _fontExpDetail!, detBrush, detRect, detSf);
+                }
+            }
+
+            return y + cardH;
+        }
+
+        private static void DrawBriefcaseIcon(Graphics g, float cx, float cy, float s, Color c)
+        {
+            using var pen = new Pen(c, 1.2f) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+            g.DrawRectangle(pen, cx - s * 1.1f, cy - s * 0.5f, s * 2.2f, s * 1.5f);
+            g.DrawLine(pen, cx - s * 0.5f, cy - s * 0.5f, cx - s * 0.5f, cy - s * 0.9f);
+            g.DrawLine(pen, cx - s * 0.5f, cy - s * 0.9f, cx + s * 0.5f, cy - s * 0.9f);
+            g.DrawLine(pen, cx + s * 0.5f, cy - s * 0.9f, cx + s * 0.5f, cy - s * 0.5f);
+            g.DrawLine(pen, cx, cy - s * 0.5f, cx, cy - s * 0.1f);
+        }
+
+        // ──────────────────────────────────────────────────────
+        // 9. Credentials & Featured Projects Row (Horizontal Panel)
+        // ──────────────────────────────────────────────────────
+        private float DrawCertAndProjectsRow(Graphics g, RectangleF card, float y)
+        {
+            float margin = S(16f);
+            float totalW = card.Width - margin * 2;
+            float cardH  = S(62f);
+
+            var panelBounds = new RectangleF(card.X + margin, y, totalW, cardH);
+            using var path = RoundedRect(panelBounds, S(16f));
+
+            // Background #111315
+            using var bgB = new SolidBrush(C_CHARCOAL_MAIN);
+            g.FillPath(bgB, path);
+
+            // Border #303338
+            using var bPen = new Pen(C_BORDER_NORMAL, S(1f));
+            g.DrawPath(bPen, path);
+
+            // Proportional split: Left 49%, Right 51%
+            float certW = totalW * 0.49f;
+            float projW = totalW - certW;
+            _certCardBounds     = new RectangleF(panelBounds.X, panelBounds.Y, certW, cardH);
+            _projectsCardBounds = new RectangleF(panelBounds.X + certW, panelBounds.Y, projW, cardH);
+
+            // Vertical divider line: #303338
+            float divX = panelBounds.X + certW;
+            using var divPen = new Pen(C_BORDER_NORMAL, S(1f));
+            g.DrawLine(divPen, divX, panelBounds.Y + S(6f), divX, panelBounds.Bottom - S(6f));
+
+            // Hover state overlays
+            if (_certCardHovered)
+            {
+                using var hBrush = new SolidBrush(Color.FromArgb(20, C_RED_SIGNAL));
+                using var hPath = RoundedRect(new RectangleF(_certCardBounds.X + S(2f), _certCardBounds.Y + S(2f), _certCardBounds.Width - S(4f), _certCardBounds.Height - S(4f)), S(14f));
+                g.FillPath(hBrush, hPath);
+            }
+            if (_projectsCardHovered)
+            {
+                using var hBrush = new SolidBrush(Color.FromArgb(20, C_RED_SIGNAL));
+                using var hPath = RoundedRect(new RectangleF(_projectsCardBounds.X + S(2f), _projectsCardBounds.Y + S(2f), _projectsCardBounds.Width - S(4f), _projectsCardBounds.Height - S(4f)), S(14f));
+                g.FillPath(hBrush, hPath);
+            }
 
             DrawCertificationsCard(g, _certCardBounds, _certCardHovered);
-            DrawPatentCard(g, _patentCardBounds, _patentCardHovered);
+            DrawProjectsCard(g, _projectsCardBounds, _projectsCardHovered);
 
             return y + cardH;
         }
 
         private void DrawCertificationsCard(Graphics g, RectangleF r, bool isHovered)
         {
-            using var path = RoundedRect(r, S(8f));
-
-            Color bg = isHovered ? Color.FromArgb(32, 245, 158, 11) : C_TILE_BG;
-            using var bgB = new SolidBrush(bg);
-            g.FillPath(bgB, path);
-
-            Color bc = isHovered ? C_AMBER : C_TILE_BORDER;
-            using var bPen = new Pen(bc, S(1f));
-            g.DrawPath(bPen, path);
-
-            // Gold Medal Icon in left box
             float iconBoxSz = S(32f);
             var iconBox = new RectangleF(r.X + S(8f), r.Y + (r.Height - iconBoxSz) / 2f, iconBoxSz, iconBoxSz);
-            DrawGoldMedalIcon(g, iconBox);
+            DrawGoldMedalIcon(g, iconBox, isHovered);
 
-            // Title: CERTIFICATIONS
             float textX = iconBox.Right + S(8f);
-            using var headB = new SolidBrush(C_CYAN);
-            g.DrawString("CERTIFICATIONS", _fontCertHeader!, headB, textX, r.Y + S(7f));
+            using var headB = new SolidBrush(C_TEXT_PRIMARY);
+            g.DrawString("CERTIFICATIONS & HONORS", _fontCertHeader!, headB, textX, r.Y + S(8f));
 
-            // Body line 1: Python • AI Tools • Data Science • Power BI • Azure • Generative AI
             using var bodyB = new SolidBrush(C_TEXT_SECOND);
-            g.DrawString("Python  •  AI Tools  •  Data Science  •  Power BI  •  Azure  •  Generative AI", _fontCertBody!, bodyB, textX, r.Y + S(22f));
-
-            // Body line 2: Google Ads • WordPress
-            g.DrawString("Google Ads  •  WordPress", _fontCertBody!, bodyB, textX, r.Y + S(36f));
+            g.DrawString("Diploma in Programming (C, C++, Java)  •  GenAI", _fontCertBody!, bodyB, textX, r.Y + S(24f));
+            g.DrawString("AI Agents (Google & Kaggle)  •  MSME Hackathon", _fontCertBody!, bodyB, textX, r.Y + S(39f));
         }
 
-        private void DrawGoldMedalIcon(Graphics g, RectangleF r)
+        private void DrawGoldMedalIcon(Graphics g, RectangleF r, bool isHovered)
         {
             float cx = r.X + r.Width / 2f;
             float cy = r.Y + r.Height / 2f;
             float mr = S(11.5f);
 
-            using (var goldBg = new SolidBrush(Color.FromArgb(30, 245, 158, 11)))
-            using (var goldCirclePen = new Pen(Color.FromArgb(90, 245, 158, 11), S(1f)))
+            Color circleBg = isHovered ? Color.FromArgb(40, C_RED_DARK) : C_CHARCOAL_SEC;
+            Color circleBorder = isHovered ? C_RED_PRIMARY : C_RED_BORDER;
+            using (var goldBg = new SolidBrush(circleBg))
+            using (var goldCirclePen = new Pen(circleBorder, S(1f)))
             {
                 g.FillEllipse(goldBg, cx - mr, cy - mr, mr * 2, mr * 2);
                 g.DrawEllipse(goldCirclePen, cx - mr, cy - mr, mr * 2, mr * 2);
@@ -1564,76 +1945,61 @@ namespace OrionGDWidget
 
             float inR = S(5.5f);
             float medalCy = cy - S(1.5f);
-            using var goldPen = new Pen(C_AMBER, S(1.3f));
+            Color medalC = isHovered ? C_RED_SIGNAL : C_RED_PRIMARY;
+            using var goldPen = new Pen(medalC, S(1.3f));
             g.DrawEllipse(goldPen, cx - inR, medalCy - inR, inR * 2, inR * 2);
-            DrawDiamondSparkle(g, cx, medalCy, S(2.5f), C_AMBER);
+            DrawDiamondSparkle(g, cx, medalCy, S(2.5f), medalC);
 
-            using var ribPen = new Pen(C_AMBER, S(1.3f));
+            using var ribPen = new Pen(medalC, S(1.3f));
             g.DrawLine(ribPen, cx - inR * 0.5f, medalCy + inR * 0.7f, cx - inR * 0.8f, medalCy + inR * 1.5f);
             g.DrawLine(ribPen, cx + inR * 0.5f, medalCy + inR * 0.7f, cx + inR * 0.8f, medalCy + inR * 1.5f);
         }
 
-        private void DrawPatentCard(Graphics g, RectangleF r, bool isHovered)
+        private void DrawProjectsCard(Graphics g, RectangleF r, bool isHovered)
         {
-            using var path = RoundedRect(r, S(8f));
-
-            Color bg = isHovered ? Color.FromArgb(32, 56, 189, 248) : C_TILE_BG;
-            using var bgB = new SolidBrush(bg);
-            g.FillPath(bgB, path);
-
-            Color bc = isHovered ? C_CYAN : C_TILE_BORDER;
-            using var bPen = new Pen(bc, S(1f));
-            g.DrawPath(bPen, path);
-
-            // Cyan Lightbulb Icon in left box
             float iconBoxSz = S(32f);
             var iconBox = new RectangleF(r.X + S(8f), r.Y + (r.Height - iconBoxSz) / 2f, iconBoxSz, iconBoxSz);
-            DrawLightbulbIcon(g, iconBox);
+            DrawTerminalProjectIcon(g, iconBox, isHovered);
 
-            // Title: Indian Patent
             float textX = iconBox.Right + S(8f);
-            using var headB = new SolidBrush(Color.White);
-            g.DrawString("Indian Patent", _fontPatentTitle!, headB, textX, r.Y + S(7f));
+            using var headB = new SolidBrush(C_TEXT_PRIMARY);
+            g.DrawString("FEATURED PROJECTS", _fontProjectsHeader!, headB, textX, r.Y + S(8f));
 
-            // App No: App. No. 202441033032
-            using var appB = new SolidBrush(C_CYAN);
-            g.DrawString("App. No. 202441033032", _fontPatentApp!, appB, textX, r.Y + S(22f));
-
-            // Description: IR-based Android TV control
-            using var descB = new SolidBrush(C_TEXT_MUTED);
-            g.DrawString("IR-based Android TV control", _fontPatentDesc!, descB, textX, r.Y + S(36f));
+            using var p1B = new SolidBrush(C_TEXT_SECOND);
+            g.DrawString("Connify — Zero-Trust React Native & Next.js", _fontProjectsBody!, p1B, textX, r.Y + S(24f));
+            g.DrawString("FaceShield — Edge-AI Face Auth (FastAPI • ONNX)", _fontProjectsBody!, p1B, textX, r.Y + S(39f));
         }
 
-        private void DrawLightbulbIcon(Graphics g, RectangleF r)
+        private void DrawTerminalProjectIcon(Graphics g, RectangleF r, bool isHovered)
         {
             float cx = r.X + r.Width / 2f;
             float cy = r.Y + r.Height / 2f;
             float mr = S(11.5f);
 
-            // Circular cyan badge container matching gold medal
-            using (var bulbBg = new SolidBrush(Color.FromArgb(30, 56, 189, 248)))
-            using (var bulbCirclePen = new Pen(Color.FromArgb(90, 56, 189, 248), S(1f)))
+            Color circleBg = isHovered ? Color.FromArgb(40, C_RED_DARK) : C_CHARCOAL_SEC;
+            Color circleBorder = isHovered ? C_RED_PRIMARY : C_RED_BORDER;
+            using (var pBg = new SolidBrush(circleBg))
+            using (var pCirclePen = new Pen(circleBorder, S(1f)))
             {
-                g.FillEllipse(bulbBg, cx - mr, cy - mr, mr * 2, mr * 2);
-                g.DrawEllipse(bulbCirclePen, cx - mr, cy - mr, mr * 2, mr * 2);
+                g.FillEllipse(pBg, cx - mr, cy - mr, mr * 2, mr * 2);
+                g.DrawEllipse(pCirclePen, cx - mr, cy - mr, mr * 2, mr * 2);
             }
 
-            float lr = S(5.5f);
-            using var bulbPen = new Pen(C_CYAN, S(1.3f)) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+            float s = S(4.5f);
+            Color iconC = isHovered ? C_RED_SIGNAL : C_RED_PRIMARY;
+            using var pen = new Pen(iconC, S(1.2f)) { StartCap = LineCap.Round, EndCap = LineCap.Round };
 
-            // Bulb top dome
-            g.DrawArc(bulbPen, cx - lr, cy - lr * 1.15f, lr * 2f, lr * 2f, 150, 240);
-
-            // Base screw threads
-            g.DrawLine(bulbPen, cx - lr * 0.45f, cy + lr * 0.55f, cx + lr * 0.45f, cy + lr * 0.55f);
-            g.DrawLine(bulbPen, cx - lr * 0.35f, cy + lr * 0.85f, cx + lr * 0.35f, cy + lr * 0.85f);
-
-            // Internal filament
-            g.DrawLine(bulbPen, cx, cy - lr * 0.6f, cx, cy + lr * 0.2f);
+            // Prompt chevron >_
+            g.DrawLines(pen, new[] {
+                new PointF(cx - s * 0.7f, cy - s * 0.6f),
+                new PointF(cx - s * 0.1f, cy),
+                new PointF(cx - s * 0.7f, cy + s * 0.6f)
+            });
+            g.DrawLine(pen, cx + s * 0.1f, cy + s * 0.6f, cx + s * 0.7f, cy + s * 0.6f);
         }
 
         // ──────────────────────────────────────────────────────
-        // 9. Connect With Me (6 Platform Buttons)
+        // 9. Connect With Me (5 Platform Buttons)
         // ──────────────────────────────────────────────────────
         private float DrawConnectSection(Graphics g, RectangleF card, float y)
         {
@@ -1641,18 +2007,18 @@ namespace OrionGDWidget
 
             // Section Header: 🔗 CONNECT WITH ME
             float iconX = card.X + margin;
-            DrawChainLinkIcon(g, iconX, y + S(5f), S(3.5f), C_CYAN);
+            DrawChainLinkIcon(g, iconX, y + S(5f), S(3.5f), C_RED_SIGNAL);
 
-            using var secB = new SolidBrush(C_CYAN);
+            using var secB = new SolidBrush(C_TEXT_SECOND);
             g.DrawString("CONNECT WITH ME", _fontSecHeader!, secB, iconX + S(14f), y);
             y += S(17f);
 
-            // 6 Buttons side-by-side
+            // 5 Buttons side-by-side
             float totalW = card.Width - margin * 2;
             int count = _connectButtons.Count;
             float gapX = S(6f);
             float btnW = (totalW - (count - 1) * gapX) / count;
-            float btnH = S(48f);
+            float btnH = S(54f);
 
             var sf = new StringFormat
             {
@@ -1669,28 +2035,34 @@ namespace OrionGDWidget
 
                 using var path = RoundedRect(b.Bounds, S(8f));
 
-                Color bg = b.IsHovered ? Color.FromArgb(35, 56, 189, 248) : C_TILE_BG;
+                Color bg = b.IsHovered ? C_CHARCOAL_SEC : C_CHARCOAL_MAIN;
                 using var bgB = new SolidBrush(bg);
                 g.FillPath(bgB, path);
 
-                Color bc = b.IsHovered ? C_CYAN : C_TILE_BORDER;
+                Color bc = b.IsHovered ? C_RED_PRIMARY : C_BORDER_NORMAL;
                 using var bPen = new Pen(bc, S(1f));
                 g.DrawPath(bPen, path);
 
-                // Top Vector Platform Icon
-                var iconRect = new RectangleF(bx, y + S(4f), btnW, S(16f));
-                DrawConnectPlatformIcon(g, b.Type, iconRect);
+                if (b.IsHovered)
+                {
+                    using var glowPen = new Pen(Color.FromArgb(40, C_RED_SIGNAL), S(2f));
+                    g.DrawPath(glowPen, path);
+                }
 
-                // Handle Label (e.g. TheOrionGD or the-orion-gd.vercel.app)
+                // Top Vector Platform Icon
+                var iconRect = new RectangleF(bx, y + S(6f), btnW, S(16f));
+                DrawConnectPlatformIcon(g, b.Type, iconRect, b.IsHovered);
+
+                // Handle Label (e.g. TheOrionGD or theoriongd)
                 Font handleFont = (b.Handle.Length > 15) ? _fontConnectHandleCompact! : _fontConnectHandle!;
                 Color hc = b.IsHovered ? Color.White : C_TEXT_PRIMARY;
                 using var hb = new SolidBrush(hc);
-                var handleRect = new RectangleF(bx + S(1f), y + S(21f), btnW - S(2f), S(12f));
+                var handleRect = new RectangleF(bx + S(2f), y + S(24f), btnW - S(4f), S(14f));
                 g.DrawString(b.Handle, handleFont, hb, handleRect, sf);
 
-                // Platform Sublabel (e.g. GitHub)
+                // Platform Sublabel (e.g. GitHub, LinkedIn)
                 using var pb = new SolidBrush(C_TEXT_MUTED);
-                var platRect = new RectangleF(bx, y + S(33f), btnW, S(11f));
+                var platRect = new RectangleF(bx, y + S(38f), btnW, S(12f));
                 g.DrawString(b.Platform, _fontConnectPlatform!, pb, platRect, sf);
             }
 
@@ -1704,16 +2076,17 @@ namespace OrionGDWidget
             g.DrawEllipse(p, cx - s * 0.1f, cy - s * 0.5f, s * 1.1f, s * 1.0f);
         }
 
-        private void DrawConnectPlatformIcon(Graphics g, string type, RectangleF r)
+        private void DrawConnectPlatformIcon(Graphics g, string type, RectangleF r, bool isHovered)
         {
             float cx = r.X + r.Width / 2f;
             float cy = r.Y + r.Height / 2f;
             float s = S(4.5f);
+            Color ic = isHovered ? C_RED_SIGNAL : C_TEXT_SECOND;
 
             switch (type)
             {
                 case "github":
-                    using (var pen = new Pen(Color.White, S(1.2f)) { StartCap = LineCap.Round, EndCap = LineCap.Round })
+                    using (var pen = new Pen(ic, S(1.2f)) { StartCap = LineCap.Round, EndCap = LineCap.Round })
                     {
                         g.DrawLines(pen, new[] { new PointF(cx - s * 0.4f, cy - s * 0.8f), new PointF(cx - s * 1.2f, cy), new PointF(cx - s * 0.4f, cy + s * 0.8f) });
                         g.DrawLine(pen, cx - s * 0.2f, cy + s * 0.9f, cx + s * 0.2f, cy - s * 0.9f);
@@ -1724,13 +2097,15 @@ namespace OrionGDWidget
                 case "linkedin":
                     float inW = S(12f);
                     float inH = S(12f);
-                    using (var inBg = new SolidBrush(Color.FromArgb(255, 14, 118, 168)))
+                    using (var inBorder = new Pen(isHovered ? C_RED_BORDER : C_BORDER_NORMAL, S(1f)))
+                    using (var inBg = new SolidBrush(C_SURFACE_HL))
                     {
                         using var inPath = RoundedRect(new RectangleF(cx - inW / 2, cy - inH / 2, inW, inH), S(2.5f));
                         g.FillPath(inBg, inPath);
+                        g.DrawPath(inBorder, inPath);
                     }
                     using (var inFont = new Font("Segoe UI", S(7.5f), FontStyle.Bold, GraphicsUnit.Pixel))
-                    using (var wBrush = new SolidBrush(Color.White))
+                    using (var wBrush = new SolidBrush(ic))
                     {
                         var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
                         g.DrawString("in", inFont, wBrush, new RectangleF(cx - inW / 2, cy - inH / 2, inW, inH), sf);
@@ -1739,7 +2114,8 @@ namespace OrionGDWidget
 
                 case "hackerrank":
                     float hs = S(5.2f);
-                    using (var hBg = new SolidBrush(Color.FromArgb(255, 34, 197, 94)))
+                    using (var hBg = new SolidBrush(C_SURFACE_HL))
+                    using (var hBorder = new Pen(isHovered ? C_RED_BORDER : C_BORDER_NORMAL, S(1f)))
                     {
                         PointF[] hex = {
                             new PointF(cx, cy - hs),
@@ -1750,8 +2126,9 @@ namespace OrionGDWidget
                             new PointF(cx - hs * 0.85f, cy - hs * 0.5f)
                         };
                         g.FillPolygon(hBg, hex);
+                        g.DrawPolygon(hBorder, hex);
                     }
-                    using (var hPen = new Pen(Color.White, S(1.1f)))
+                    using (var hPen = new Pen(ic, S(1.1f)))
                     {
                         g.DrawLine(hPen, cx - hs * 0.45f, cy - hs * 0.5f, cx - hs * 0.45f, cy + hs * 0.5f);
                         g.DrawLine(hPen, cx + hs * 0.45f, cy - hs * 0.5f, cx + hs * 0.45f, cy + hs * 0.5f);
@@ -1760,7 +2137,7 @@ namespace OrionGDWidget
                     break;
 
                 case "portfolio":
-                    using (var globePen = new Pen(C_CYAN, S(1.1f)))
+                    using (var globePen = new Pen(ic, S(1.1f)))
                     {
                         g.DrawEllipse(globePen, cx - s, cy - s, s * 2f, s * 2f);
                         g.DrawEllipse(globePen, cx - s * 0.45f, cy - s, s * 0.9f, s * 2f);
@@ -1768,36 +2145,22 @@ namespace OrionGDWidget
                     }
                     break;
 
-                case "play":
-                    PointF[] playPts = {
-                        new PointF(cx - s * 0.8f, cy - s),
-                        new PointF(cx + s * 1.1f, cy),
-                        new PointF(cx - s * 0.8f, cy + s)
-                    };
-                    using (var playBrush = new LinearGradientBrush(
-                        new PointF(cx - s, cy - s),
-                        new PointF(cx + s, cy + s),
-                        Color.FromArgb(255, 99, 102, 241),
-                        Color.FromArgb(255, 56, 189, 248)))
-                    {
-                        g.FillPolygon(playBrush, playPts);
-                    }
-                    break;
-
                 case "youtube":
                     float ytW = S(14f);
                     float ytH = S(10f);
-                    using (var ytBg = new SolidBrush(Color.FromArgb(255, 239, 68, 68)))
+                    using (var ytBorder = new Pen(isHovered ? C_RED_BORDER : C_BORDER_NORMAL, S(1f)))
+                    using (var ytBg = new SolidBrush(C_SURFACE_HL))
                     {
                         using var ytPath = RoundedRect(new RectangleF(cx - ytW / 2f, cy - ytH / 2f, ytW, ytH), S(2.5f));
                         g.FillPath(ytBg, ytPath);
+                        g.DrawPath(ytBorder, ytPath);
                     }
                     PointF[] ytTri = {
                         new PointF(cx - S(2.0f), cy - S(2.8f)),
                         new PointF(cx + S(2.8f), cy),
                         new PointF(cx - S(2.0f), cy + S(2.8f))
                     };
-                    using (var wB = new SolidBrush(Color.White))
+                    using (var wB = new SolidBrush(ic))
                     {
                         g.FillPolygon(wB, ytTri);
                     }
@@ -1812,27 +2175,45 @@ namespace OrionGDWidget
         {
             float margin = S(18f);
 
+            // Horizontal separator above footer: #303338
+            using var sepPen = new Pen(C_BORDER_NORMAL, S(1f));
+            g.DrawLine(sepPen, card.X + S(8f), y - S(6f), card.Right - S(8f), y - S(6f));
+
             // Left: > Always learning. Always building.
-            using var chevB = new SolidBrush(C_CYAN);
+            using var chevB = new SolidBrush(C_RED_SIGNAL);
             g.DrawString(">", _fontFooterQuote!, chevB, card.X + margin, y);
 
-            using var quoteB = new SolidBrush(C_TEXT_MUTED);
+            using var quoteB = new SolidBrush(C_TEXT_SECOND);
             g.DrawString("Always learning. Always building.", _fontFooterQuote!, quoteB, card.X + margin + S(12f), y);
 
-            // Right: /// ORIONGD × CSE 23 A
+            // Right: /// THEORIONGD × OGD
             float rightX = card.Right - margin;
             var sf = new StringFormat
             {
                 Alignment     = StringAlignment.Far,
                 LineAlignment = StringAlignment.Near
             };
-            using var tagB = new SolidBrush(Color.FromArgb(210, 56, 189, 248));
-            g.DrawString("ORIONGD   ×   CSE 23 A", _fontFooterTag!, tagB, rightX, y, sf);
 
-            float strW = g.MeasureString("ORIONGD   ×   CSE 23 A", _fontFooterTag!).Width;
-            float stripeStartX = rightX - strW - S(24f);
+            // OGD
+            float ogdW = g.MeasureString("OGD", _fontFooterTag!).Width;
+            using var ogdB = new SolidBrush(C_TEXT_MUTED);
+            g.DrawString("OGD", _fontFooterTag!, ogdB, rightX, y, sf);
 
-            using var stripePen = new Pen(C_CYAN, S(1.4f)) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+            // ×
+            float crossW = g.MeasureString(" × ", _fontFooterTag!).Width;
+            float crossX = rightX - ogdW;
+            using var crossB = new SolidBrush(C_TEXT_MUTED);
+            g.DrawString(" × ", _fontFooterTag!, crossB, crossX, y, sf);
+
+            // THEORIONGD
+            float orionW = g.MeasureString("THEORIONGD", _fontFooterTag!).Width;
+            float orionX = crossX - crossW;
+            using var orionB = new SolidBrush(C_TEXT_PRIMARY);
+            g.DrawString("THEORIONGD", _fontFooterTag!, orionB, orionX, y, sf);
+
+            // /// Red accent slashes
+            float stripeStartX = orionX - orionW - S(16f);
+            using var stripePen = new Pen(C_RED_PRIMARY, S(1.4f)) { StartCap = LineCap.Round, EndCap = LineCap.Round };
             for (int i = 0; i < 3; i++)
             {
                 float sx = stripeStartX + i * S(4.5f);
@@ -1898,9 +2279,8 @@ namespace OrionGDWidget
                 _fontSkillPill?.Dispose();
                 _fontCertHeader?.Dispose();
                 _fontCertBody?.Dispose();
-                _fontPatentTitle?.Dispose();
-                _fontPatentApp?.Dispose();
-                _fontPatentDesc?.Dispose();
+                _fontProjectsHeader?.Dispose();
+                _fontProjectsBody?.Dispose();
                 _fontConnectHandle?.Dispose();
                 _fontConnectHandleCompact?.Dispose();
                 _fontConnectPlatform?.Dispose();
@@ -2022,14 +2402,16 @@ namespace OrionGDWidget
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox     = false;
             MinimizeBox     = false;
-            StartPosition   = FormStartPosition.CenterParent;
-            Width           = 380;
-            Height          = 360;
-            BackColor       = Color.FromArgb(255, 6, 9, 19);
+            StartPosition   = FormStartPosition.CenterScreen;
+            TopMost         = true;
+            Width           = 390;
+            Height          = 370;
+            BackColor       = Color.FromArgb(255, 13, 15, 17);
             ForeColor       = Color.FromArgb(255, 241, 245, 249);
             ShowInTaskbar   = false;
             DoubleBuffered  = true;
             Font            = new Font("Segoe UI", 9f);
+            KeyPreview      = true;
 
             var panel = new Panel
             {
@@ -2041,21 +2423,41 @@ namespace OrionGDWidget
 
             var closeBtn = new Button
             {
-                Text      = "Close",
-                Width     = 100,
-                Height    = 30,
-                FlatStyle = FlatStyle.Flat,
-                BackColor = Color.FromArgb(255, 12, 18, 34),
-                ForeColor = Color.FromArgb(255, 56, 189, 248),
-                Font      = new Font("Segoe UI", 9f, FontStyle.Bold),
-                Cursor    = Cursors.Hand,
-                DialogResult = DialogResult.OK
+                Text         = "Close",
+                Width        = 110,
+                Height       = 32,
+                FlatStyle    = FlatStyle.Flat,
+                BackColor    = Color.FromArgb(255, 24, 26, 29),
+                ForeColor    = Color.FromArgb(255, 255, 59, 48),
+                Font         = new Font("Segoe UI", 9.5f, FontStyle.Bold),
+                Cursor       = Cursors.Hand,
+                DialogResult = DialogResult.OK,
+                Anchor       = AnchorStyles.Bottom
             };
-            closeBtn.FlatAppearance.BorderColor = Color.FromArgb(255, 30, 58, 95);
-            closeBtn.FlatAppearance.MouseOverBackColor = Color.FromArgb(255, 30, 48, 75);
+            closeBtn.FlatAppearance.BorderColor = Color.FromArgb(255, 111, 36, 40);
+            closeBtn.FlatAppearance.MouseOverBackColor = Color.FromArgb(255, 53, 23, 26);
             closeBtn.Click += (s, e) => Close();
-            closeBtn.Location = new Point((Width - closeBtn.Width) / 2, Height - closeBtn.Height - 34);
-            Controls.Add(closeBtn);
+            closeBtn.Location = new Point((Width - closeBtn.Width) / 2, Height - closeBtn.Height - 48);
+
+            panel.Controls.Add(closeBtn);
+            closeBtn.BringToFront();
+
+            AcceptButton = closeBtn;
+            CancelButton = closeBtn;
+
+            KeyDown += (s, e) =>
+            {
+                if (e.KeyCode == Keys.Escape || e.KeyCode == Keys.Enter)
+                    Close();
+            };
+        }
+
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            TopMost = true;
+            BringToFront();
+            Activate();
         }
 
         private void PaintAbout(object? sender, PaintEventArgs e)
@@ -2074,39 +2476,39 @@ namespace OrionGDWidget
             float y = 20f;
 
             using var f1 = new Font("Segoe UI", 18f, FontStyle.Bold);
-            using var b1 = new SolidBrush(Color.FromArgb(255, 56, 189, 248));
-            g.DrawString("ORIONGD", f1, b1, new RectangleF(0, y, w, 32), sf);
+            using var b1 = new SolidBrush(Color.FromArgb(255, 255, 59, 48));
+            g.DrawString("THEORIONGD", f1, b1, new RectangleF(0, y, w, 32), sf);
             y += 32f;
 
             using var f2 = new Font("Segoe UI", 12f, FontStyle.Bold);
-            using var b2 = new SolidBrush(Color.FromArgb(255, 248, 250, 252));
+            using var b2 = new SolidBrush(Color.FromArgb(255, 242, 242, 242));
             g.DrawString("Godfrey T. R", f2, b2, new RectangleF(0, y, w, 24), sf);
             y += 24f;
 
             using var f3 = new Font("Segoe UI", 9.5f);
-            using var b3 = new SolidBrush(Color.FromArgb(255, 148, 163, 184));
-            g.DrawString("Software Engineer  •  CSE 23 A", f3, b3, new RectangleF(0, y, w, 20), sf);
+            using var b3 = new SolidBrush(Color.FromArgb(255, 167, 170, 174));
+            g.DrawString("Java Full Stack Developer | Software Engineer", f3, b3, new RectangleF(0, y, w, 20), sf);
             y += 24f;
 
-            using var sepPen = new Pen(Color.FromArgb(120, 56, 189, 248), 1.2f);
+            using var sepPen = new Pen(Color.FromArgb(180, 111, 36, 40), 1.2f);
             g.DrawLine(sepPen, 40, y, w - 40, y);
             y += 12f;
 
             using var f4 = new Font("Segoe UI", 8.5f, FontStyle.Bold);
-            using var b4 = new SolidBrush(Color.FromArgb(255, 186, 230, 253));
-            g.DrawString("Full-Stack  •  AI & LLMs  •  Cybersecurity  •  UI/UX", f4, b4,
+            using var b4 = new SolidBrush(Color.FromArgb(255, 229, 57, 53));
+            g.DrawString("Java Full-Stack  •  Multi-Agent AI  •  Edge-AI  •  Security", f4, b4,
                 new RectangleF(0, y, w, 20), sf);
             y += 24f;
 
             using var f5 = new Font("Segoe UI", 8.5f);
-            using var b5 = new SolidBrush(Color.FromArgb(255, 148, 163, 184));
-            g.DrawString("Official OrionGD Desktop Identity Dashboard.\nIndian Patent App. No. 202441033032.\nCrafted with hardware-accelerated 32bpp per-pixel transparency.",
+            using var b5 = new SolidBrush(Color.FromArgb(255, 167, 170, 174));
+            g.DrawString("Official TheOrionGD Desktop Identity Dashboard.\nCrafted with hardware-accelerated 32bpp per-pixel transparency.",
                 f5, b5, new RectangleF(24, y, w - 48, 48), sf);
             y += 48f;
 
             string versionStr = $"v{Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "2.0.0"}";
             using var f6 = new Font("Segoe UI", 8f);
-            using var b6 = new SolidBrush(Color.FromArgb(255, 100, 116, 139));
+            using var b6 = new SolidBrush(Color.FromArgb(255, 104, 109, 115));
             g.DrawString($"Version {versionStr}  •  TheOrionGD Ecosystem", f6, b6,
                 new RectangleF(0, y, w, 20), sf);
         }
