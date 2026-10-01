@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>OrionGDWidget</AssemblyName>
+    <ApplicationIcon />
+    <StartupObject>OrionGDWidget.Program</StartupObject>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <Version>1.0.0</Version>
+    <AssemblyTitle>OrionGD Identity Widget</AssemblyTitle>
+    <Product>OrionGD Identity Widget</Product>
+    <Company>TheOrionGD</Company>
+    <Description>Official OrionGD Desktop Identity Widget for Godfrey T. R</Description>
+  </PropertyGroup>
+
+</Project>
